@@ -278,19 +278,22 @@ GitEngine.prototype.validateBranchName = function(name) {
   name = name.replace(/\s/g, '');
   if (!/^[a-zA-Z0-9]+$/.test(name)) {
     throw new GitError({
-      msg: 'woah bad branch name!! This is not ok: ' + name
+      // msg: 'woah bad branch name!! This is not ok: ' + name
+      msg: '브랜치명으로 쓸 수 없습니다: ' + name
     });
   }
   if (/[hH][eE][aA][dD]/.test(name)) {
     throw new GitError({
-      msg: 'branch name of "head" is ambiguous, dont name it that'
+      // msg: 'branch name of "head" is ambiguous, dont name it that'
+      msg: '"head"라는 브랜치 이름은 불분명합니다. 그렇게 이름짓지 맙시다'
     });
   }
   if (name.length > 9) {
     name = name.slice(0, 9);
     this.command.addWarning(
-      'Sorry, we need to keep branch names short for the visuals. Your branch ' +
-      'name was truncated to 9 characters, resulting in ' + name
+      // 'Sorry, we need to keep branch names short for the visuals. Your branch ' +
+      // 'name was truncated to 9 characters, resulting in ' + name
+      '화면에 보이기 좋게 하기 위해 브랜치이름을 짧게 하고 있어요. 지정하신 브랜치명을 9글자로 줄여서 쓰겠습니다: ' + name
     );
   }
   return name;
@@ -300,7 +303,8 @@ GitEngine.prototype.makeBranch = function(id, target) {
   id = this.validateBranchName(id);
   if (this.refs[id]) {
     throw new GitError({
-      msg: 'that branch id either matches a commit hash or already exists!'
+      // msg: 'that branch id either matches a commit hash or already exists!'
+      msg: '그 브랜치 이름이 이미 있거나, 커밋 해쉬와 겹칩니다!'
     });
   }
 
@@ -379,7 +383,8 @@ GitEngine.prototype.makeCommit = function(parents, id, options) {
 GitEngine.prototype.acceptNoGeneralArgs = function() {
   if (this.generalArgs.length) {
     throw new GitError({
-      msg: "That command accepts no general arguments"
+      // msg: "That command accepts no general arguments"
+      msg: "입력하신 명령어는 파라미터를 받지 않습니다."
     });
   }
 };

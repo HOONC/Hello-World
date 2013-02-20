@@ -161,7 +161,8 @@ GitVisuals.prototype.finishAnimation = function() {
   var defaultTime = GRAPHICS.defaultAnimationTime;
   var nodeRadius = GRAPHICS.nodeRadius;
 
-  var textString = 'Solved!!\n:D';
+  // var textString = 'Solved!!\n:D';
+  var textString = '정답!!\n^_^';
   var text = null;
   var makeText = _.bind(function() {
     text = this.paper.text(

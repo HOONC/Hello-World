@@ -21,10 +21,12 @@ var instantCommands = [
     var lines = [
       'Git Version PCOTTLE.1.0',
       '<br/>',
-      'Usage:',
+      // 'Usage:',
+      '사용법:',
       _.escape('\t git <command> [<args>]'),
       '<br/>',
-      'Supported commands:',
+      // 'Supported commands:',
+      '지원하는 명령어:',
       '<br/>'
     ];
     var commands = GitOptionParser.prototype.getMasterOptionMap();
@@ -159,7 +161,8 @@ GitOptionParser.prototype.explodeAndSet = function() {
       // it's an option, check supportedMap
       if (this.supportedMap[part] === undefined) {
         throw new CommandProcessError({
-          msg: 'The option "' + part + '" is not supported'
+          // msg: 'The option "' + part + '" is not supported'
+          msg: '옵션 "' +  part + '"는 지원하지 않습니다'
         });
       }
 

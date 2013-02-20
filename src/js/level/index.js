@@ -175,9 +175,12 @@ var Level = Sandbox.extend({
     var confirmDefer = Q.defer();
     var confirmView = new ConfirmCancelTerminal({
       markdowns: [
-        '## Are you sure you want to see the solution?',
+        // '## Are you sure you want to see the solution?',
+        // '',
+        // 'I believe in you! You can do it'
+        '## 정말 해답을 보시겠어요?',
         '',
-        'I believe in you! You can do it'
+        '당신도 해내실 수 있다고 믿습니다!'
       ],
       deferred: confirmDefer
     });
@@ -185,7 +188,8 @@ var Level = Sandbox.extend({
     confirmDefer.promise
     .then(issueFunc)
     .fail(function() {
-      command.setResult("Great! I'll let you get back to it");
+      // command.setResult("Great! I'll let you get back to it");
+      command.setResult("그렇죠! 계속해봅시다");
     })
     .done(function() {
      // either way we animate, so both options can share this logic
@@ -296,8 +300,10 @@ var Level = Sandbox.extend({
   afterCommandDefer: function(defer, command) {
     if (this.solved) {
       command.addWarning(
-        "You've already solved this level, try other levels with 'show levels'" +
-        "or go back to the sandbox with 'sandbox'"
+        // "You've already solved this level, try other levels with 'show levels'" +
+        // "or go back to the sandbox with 'sandbox'"
+        "이미 이 레벨을 해결하셨습니다. 'show levels'를 입력해서 다른 레벨에 도전해보시거나," +
+        "'sandbox'라고 쳐서 연습 화면으로 돌아가보세요"
       );
       defer.resolve();
       return;
@@ -405,7 +411,8 @@ var Level = Sandbox.extend({
   getInstantCommands: function() {
     var hintMsg = (this.level.hint) ?
       this.level.hint :
-      "Hmm, there doesn't seem to be a hint for this level :-/";
+      // "Hmm, there doesn't seem to be a hint for this level :-/";
+      "흠, 이번 레벨에는 힌트가 없군요 -_-;";
 
     return [
       [/^help$|^\?$/, function() {

@@ -132,8 +132,8 @@ var ConfirmCancelView = ResolveRejectBase.extend({
     this.destination = options.destination;
     this.deferred = options.deferred || Q.defer();
     this.JSON = {
-      confirm: options.confirm || 'Confirm',
-      cancel: options.cancel || 'Cancel'
+      confirm: options.confirm || '확인',//'Confirm',
+      cancel: options.cancel || '취소'//'Cancel'
     };
 
     this.render();
@@ -330,7 +330,8 @@ var ModalAlert = ContainedBase.extend({
     }
 
     this.container = new ModalTerminal({
-      title: 'Alert!'
+      // title: 'Alert!'
+      title: '안내'
     });
     this.render();
 
@@ -429,33 +430,48 @@ var NextLevelConfirm = ConfirmCancelTerminal.extend({
     var pluralNumCommands = (options.numCommands == 1) ? '' : 's';
     var pluralBest = (options.best == 1) ? '' : 's';
 
+    // var markdowns = [
+    //   '## Great Job!!',
+    //   '',
+    //   'You solved the level in **' + options.numCommands + '** command' + pluralNumCommands + '; ',
+    //   'our solution uses ' + options.best + '. '
+    // ];
     var markdowns = [
-      '## Great Job!!',
+      '## 훌륭합니다!',
       '',
-      'You solved the level in **' + options.numCommands + '** command' + pluralNumCommands + '; ',
-      'our solution uses ' + options.best + '. '
+      '이 레벨을 **' + options.numCommands + '**개의 커맨드로 통과하셨습니다. ',
+      '모범답안은 ' + options.best + '개의 커맨드를 씁니다. '
     ];
 
     if (options.numCommands <= options.best) {
       markdowns.push(
-        'Awesome! You matched or exceeded our solution. '
+        // 'Awesome! You matched or exceeded our solution. '
+        '대단해요! 모범 답안의 수준이거나 더 뛰어납니다.'
       );
     } else {
       markdowns.push(
-        'See if you can whittle it down to ' + options.best + ' command' + pluralBest + ' :D '
+        // 'See if you can whittle it down to ' + options.best + ' command' + pluralBest + ' :D '
+        options.best + '개 이하의 커맨드로 푸실 수 있는지 도전해보세요 ^^;'
       );
     }
 
     if (options.nextLevel) {
+      // markdowns = markdowns.concat([
+      //   '',
+      //   'Would you like to move onto "' +
+      //   nextLevelName + '", the next level?'
+      // ]);
       markdowns = markdowns.concat([
         '',
-        'Would you like to move onto "' +
-        nextLevelName + '", the next level?'
+        '다음 레벨 "' +
+        nextLevelName + '" 로 넘어갈까요?'
       ]);
+
     } else {
       markdowns = markdowns.concat([
         '',
-        'Wow!!! You finished the last level, congratulations!'
+        // 'Wow!!! You finished the last level, congratulations!'
+        '오!!! 마지막 레벨도 끝내셨어요, 축하드립니다!'
       ]);
     }
 
@@ -590,8 +606,8 @@ var CanvasTerminalHolder = BaseView.extend({
     options = options || {};
     this.destination = $('body');
     this.JSON = {
-      title: options.title || 'Goal To Reach',
-      text: options.text || 'You can hide this window with "hide goal"'
+      title: options.title || '목표 결과', //'Goal To Reach',
+      text: options.text || '이 창을 닫으시려면 "hide goal"이라고 입력하세요'//'You can hide this window with "hide goal"'
     };
 
     this.render();

@@ -46,7 +46,7 @@ var LevelDropdownView = ContainedBase.extend({
     this.sequenceToLevels = Main.getLevelArbiter().getSequenceToLevels();
 
     this.container = new ModalTerminal({
-      title: 'Select a Level'
+      title: '레벨 고르기'//'Select a Level'
     });
     this.render();
     this.buildSequences();

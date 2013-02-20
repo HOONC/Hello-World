@@ -23,7 +23,8 @@ var instantCommands = [
 
     events.trigger('refreshTree');
     throw new CommandResult({
-      msg: "Refreshing tree..."
+      // msg: "Refreshing tree..."
+      msg: "트리 초기화..."
     });
   }],
   [/^rollup (\d+)$/, function(bits) {

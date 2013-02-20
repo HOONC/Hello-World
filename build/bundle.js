@@ -395,9 +395,9 @@ process.binding = function (name) {
 require.define("/node_modules/underscore/package.json",function(require,module,exports,__dirname,__filename,process,global){module.exports = {"main":"underscore.js"}
 });
 
-require.define("/node_modules/underscore/underscore.js",function(require,module,exports,__dirname,__filename,process,global){//     Underscore.js 1.4.3
+require.define("/node_modules/underscore/underscore.js",function(require,module,exports,__dirname,__filename,process,global){//     Underscore.js 1.4.4
 //     http://underscorejs.org
-//     (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
+//     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore may be freely distributed under the MIT license.
 
 (function() {
@@ -461,7 +461,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   }
 
   // Current version.
-  _.VERSION = '1.4.3';
+  _.VERSION = '1.4.4';
 
   // Collection Functions
   // --------------------
@@ -621,8 +621,9 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   // Invoke a method (with arguments) on every item in a collection.
   _.invoke = function(obj, method) {
     var args = slice.call(arguments, 2);
+    var isFunc = _.isFunction(method);
     return _.map(obj, function(value) {
-      return (_.isFunction(method) ? method : value[method]).apply(value, args);
+      return (isFunc ? method : value[method]).apply(value, args);
     });
   };
 
@@ -632,15 +633,21 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   };
 
   // Convenience version of a common use case of `filter`: selecting only objects
-  // with specific `key:value` pairs.
-  _.where = function(obj, attrs) {
-    if (_.isEmpty(attrs)) return [];
-    return _.filter(obj, function(value) {
+  // containing specific `key:value` pairs.
+  _.where = function(obj, attrs, first) {
+    if (_.isEmpty(attrs)) return first ? null : [];
+    return _[first ? 'find' : 'filter'](obj, function(value) {
       for (var key in attrs) {
         if (attrs[key] !== value[key]) return false;
       }
       return true;
     });
+  };
+
+  // Convenience version of a common use case of `find`: getting the first object
+  // containing specific `key:value` pairs.
+  _.findWhere = function(obj, attrs) {
+    return _.where(obj, attrs, true);
   };
 
   // Return the maximum element or (element-based computation).
@@ -964,26 +971,23 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   // Function (ahem) Functions
   // ------------------
 
-  // Reusable constructor function for prototype setting.
-  var ctor = function(){};
-
   // Create a function bound to a given object (assigning `this`, and arguments,
-  // optionally). Binding with arguments is also known as `curry`.
-  // Delegates to **ECMAScript 5**'s native `Function.bind` if available.
-  // We check for `func.bind` first, to fail fast when `func` is undefined.
+  // optionally). Delegates to **ECMAScript 5**'s native `Function.bind` if
+  // available.
   _.bind = function(func, context) {
-    var args, bound;
     if (func.bind === nativeBind && nativeBind) return nativeBind.apply(func, slice.call(arguments, 1));
-    if (!_.isFunction(func)) throw new TypeError;
-    args = slice.call(arguments, 2);
-    return bound = function() {
-      if (!(this instanceof bound)) return func.apply(context, args.concat(slice.call(arguments)));
-      ctor.prototype = func.prototype;
-      var self = new ctor;
-      ctor.prototype = null;
-      var result = func.apply(self, args.concat(slice.call(arguments)));
-      if (Object(result) === result) return result;
-      return self;
+    var args = slice.call(arguments, 2);
+    return function() {
+      return func.apply(context, args.concat(slice.call(arguments)));
+    };
+  };
+
+  // Partially apply a function by creating a version that has had some of its
+  // arguments pre-filled, without changing its dynamic `this` context.
+  _.partial = function(func) {
+    var args = slice.call(arguments, 1);
+    return function() {
+      return func.apply(this, args.concat(slice.call(arguments)));
     };
   };
 
@@ -991,7 +995,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   // all callbacks defined on an object belong to it.
   _.bindAll = function(obj) {
     var funcs = slice.call(arguments, 1);
-    if (funcs.length == 0) funcs = _.functions(obj);
+    if (funcs.length === 0) funcs = _.functions(obj);
     each(funcs, function(f) { obj[f] = _.bind(obj[f], obj); });
     return obj;
   };
@@ -1416,7 +1420,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
       max = min;
       min = 0;
     }
-    return min + (0 | Math.random() * (max - min + 1));
+    return min + Math.floor(Math.random() * (max - min + 1));
   };
 
   // List of HTML entities for escaping.
@@ -1472,7 +1476,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   // Useful for temporary DOM ids.
   var idCounter = 0;
   _.uniqueId = function(prefix) {
-    var id = '' + ++idCounter;
+    var id = ++idCounter + '';
     return prefix ? prefix + id : id;
   };
 
@@ -1507,6 +1511,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
   // Underscore templating handles arbitrary delimiters, preserves whitespace,
   // and correctly escapes quotes within interpolated code.
   _.template = function(text, data, settings) {
+    var render;
     settings = _.defaults({}, settings, _.templateSettings);
 
     // Combine delimiters into one regular expression via alternation.
@@ -1545,7 +1550,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
       source + "return __p;\n";
 
     try {
-      var render = new Function(settings.variable || 'obj', '_', source);
+      render = new Function(settings.variable || 'obj', '_', source);
     } catch (e) {
       e.source = source;
       throw e;
@@ -1622,7 +1627,7 @@ require.define("/node_modules/underscore/underscore.js",function(require,module,
 require.define("/node_modules/backbone/package.json",function(require,module,exports,__dirname,__filename,process,global){module.exports = {"main":"backbone.js"}
 });
 
-require.define("/node_modules/backbone/backbone.js",function(require,module,exports,__dirname,__filename,process,global){//     Backbone.js 0.9.9
+require.define("/node_modules/backbone/backbone.js",function(require,module,exports,__dirname,__filename,process,global){//     Backbone.js 0.9.10
 
 //     (c) 2010-2012 Jeremy Ashkenas, DocumentCloud Inc.
 //     Backbone may be freely distributed under the MIT license.
@@ -1658,7 +1663,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
   }
 
   // Current version of the library. Keep in sync with `package.json`.
-  Backbone.VERSION = '0.9.9';
+  Backbone.VERSION = '0.9.10';
 
   // Require Underscore, if we're on the server, and it's not already present.
   var _ = root._;
@@ -1712,7 +1717,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
 
   // Optimized internal dispatch function for triggering events. Tries to
   // keep the usual cases speedy (most Backbone events have 3 arguments).
-  var triggerEvents = function(obj, events, args) {
+  var triggerEvents = function(events, args) {
     var ev, i = -1, l = events.length;
     switch (args.length) {
     case 0: while (++i < l) (ev = events[i]).callback.call(ev.ctx);
@@ -1766,7 +1771,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
 
     // Remove one or many callbacks. If `context` is null, removes all
     // callbacks with that function. If `callback` is null, removes all
-    // callbacks for the event. If `events` is null, removes all bound
+    // callbacks for the event. If `name` is null, removes all bound
     // callbacks for all events.
     off: function(name, callback, context) {
       var list, ev, events, names, i, l, j, k;
@@ -1784,7 +1789,8 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
           if (callback || context) {
             for (j = 0, k = list.length; j < k; j++) {
               ev = list[j];
-              if ((callback && callback !== (ev.callback._callback || ev.callback)) ||
+              if ((callback && callback !== ev.callback &&
+                               callback !== ev.callback._callback) ||
                   (context && context !== ev.context)) {
                 events.push(ev);
               }
@@ -1807,32 +1813,33 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
       if (!eventsApi(this, 'trigger', name, args)) return this;
       var events = this._events[name];
       var allEvents = this._events.all;
-      if (events) triggerEvents(this, events, args);
-      if (allEvents) triggerEvents(this, allEvents, arguments);
+      if (events) triggerEvents(events, args);
+      if (allEvents) triggerEvents(allEvents, arguments);
       return this;
     },
 
     // An inversion-of-control version of `on`. Tell *this* object to listen to
     // an event in another object ... keeping track of what it's listening to.
-    listenTo: function(object, events, callback) {
+    listenTo: function(obj, name, callback) {
       var listeners = this._listeners || (this._listeners = {});
-      var id = object._listenerId || (object._listenerId = _.uniqueId('l'));
-      listeners[id] = object;
-      object.on(events, callback || this, this);
+      var id = obj._listenerId || (obj._listenerId = _.uniqueId('l'));
+      listeners[id] = obj;
+      obj.on(name, typeof name === 'object' ? this : callback, this);
       return this;
     },
 
     // Tell this object to stop listening to either specific events ... or
     // to every object it's currently listening to.
-    stopListening: function(object, events, callback) {
+    stopListening: function(obj, name, callback) {
       var listeners = this._listeners;
       if (!listeners) return;
-      if (object) {
-        object.off(events, callback, this);
-        if (!events && !callback) delete listeners[object._listenerId];
+      if (obj) {
+        obj.off(name, typeof name === 'object' ? this : callback, this);
+        if (!name && !callback) delete listeners[obj._listenerId];
       } else {
+        if (typeof name === 'object') callback = this;
         for (var id in listeners) {
-          listeners[id].off(null, null, this);
+          listeners[id].off(name, callback, this);
         }
         this._listeners = {};
       }
@@ -1857,15 +1864,14 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     var defaults;
     var attrs = attributes || {};
     this.cid = _.uniqueId('c');
-    this.changed = {};
     this.attributes = {};
-    this._changes = [];
     if (options && options.collection) this.collection = options.collection;
-    if (options && options.parse) attrs = this.parse(attrs);
-    if (defaults = _.result(this, 'defaults')) _.defaults(attrs, defaults);
-    this.set(attrs, {silent: true});
-    this._currentAttributes = _.clone(this.attributes);
-    this._previousAttributes = _.clone(this.attributes);
+    if (options && options.parse) attrs = this.parse(attrs, options) || {};
+    if (defaults = _.result(this, 'defaults')) {
+      attrs = _.defaults({}, attrs, defaults);
+    }
+    this.set(attrs, options);
+    this.changed = {};
     this.initialize.apply(this, arguments);
   };
 
@@ -1909,47 +1915,72 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
       return this.get(attr) != null;
     },
 
+    // ----------------------------------------------------------------------
+
     // Set a hash of model attributes on the object, firing `"change"` unless
     // you choose to silence it.
     set: function(key, val, options) {
-      var attr, attrs;
+      var attr, attrs, unset, changes, silent, changing, prev, current;
       if (key == null) return this;
 
       // Handle both `"key", value` and `{key: value}` -style arguments.
-      if (_.isObject(key)) {
+      if (typeof key === 'object') {
         attrs = key;
         options = val;
       } else {
         (attrs = {})[key] = val;
       }
 
-      // Extract attributes and options.
-      var silent = options && options.silent;
-      var unset = options && options.unset;
+      options || (options = {});
 
       // Run validation.
       if (!this._validate(attrs, options)) return false;
 
+      // Extract attributes and options.
+      unset           = options.unset;
+      silent          = options.silent;
+      changes         = [];
+      changing        = this._changing;
+      this._changing  = true;
+
+      if (!changing) {
+        this._previousAttributes = _.clone(this.attributes);
+        this.changed = {};
+      }
+      current = this.attributes, prev = this._previousAttributes;
+
       // Check for changes of `id`.
       if (this.idAttribute in attrs) this.id = attrs[this.idAttribute];
 
-      var now = this.attributes;
-
-      // For each `set` attribute...
+      // For each `set` attribute, update or delete the current value.
       for (attr in attrs) {
         val = attrs[attr];
-
-        // Update or delete the current value, and track the change.
-        unset ? delete now[attr] : now[attr] = val;
-        this._changes.push(attr, val);
+        if (!_.isEqual(current[attr], val)) changes.push(attr);
+        if (!_.isEqual(prev[attr], val)) {
+          this.changed[attr] = val;
+        } else {
+          delete this.changed[attr];
+        }
+        unset ? delete current[attr] : current[attr] = val;
       }
 
-      // Signal that the model's state has potentially changed, and we need
-      // to recompute the actual changes.
-      this._hasComputed = false;
+      // Trigger all relevant attribute changes.
+      if (!silent) {
+        if (changes.length) this._pending = true;
+        for (var i = 0, l = changes.length; i < l; i++) {
+          this.trigger('change:' + changes[i], this, current[changes[i]], options);
+        }
+      }
 
-      // Fire the `"change"` events.
-      if (!silent) this.change(options);
+      if (changing) return this;
+      if (!silent) {
+        while (this._pending) {
+          this._pending = false;
+          this.trigger('change', this, options);
+        }
+      }
+      this._pending = false;
+      this._changing = false;
       return this;
     },
 
@@ -1967,16 +1998,54 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
       return this.set(attrs, _.extend({}, options, {unset: true}));
     },
 
+    // Determine if the model has changed since the last `"change"` event.
+    // If you specify an attribute name, determine if that attribute has changed.
+    hasChanged: function(attr) {
+      if (attr == null) return !_.isEmpty(this.changed);
+      return _.has(this.changed, attr);
+    },
+
+    // Return an object containing all the attributes that have changed, or
+    // false if there are no changed attributes. Useful for determining what
+    // parts of a view need to be updated and/or what attributes need to be
+    // persisted to the server. Unset attributes will be set to undefined.
+    // You can also pass an attributes object to diff against the model,
+    // determining if there *would be* a change.
+    changedAttributes: function(diff) {
+      if (!diff) return this.hasChanged() ? _.clone(this.changed) : false;
+      var val, changed = false;
+      var old = this._changing ? this._previousAttributes : this.attributes;
+      for (var attr in diff) {
+        if (_.isEqual(old[attr], (val = diff[attr]))) continue;
+        (changed || (changed = {}))[attr] = val;
+      }
+      return changed;
+    },
+
+    // Get the previous value of an attribute, recorded at the time the last
+    // `"change"` event was fired.
+    previous: function(attr) {
+      if (attr == null || !this._previousAttributes) return null;
+      return this._previousAttributes[attr];
+    },
+
+    // Get all of the attributes of the model at the time of the previous
+    // `"change"` event.
+    previousAttributes: function() {
+      return _.clone(this._previousAttributes);
+    },
+
+    // ---------------------------------------------------------------------
+
     // Fetch the model from the server. If the server's representation of the
     // model differs from its current attributes, they will be overriden,
     // triggering a `"change"` event.
     fetch: function(options) {
       options = options ? _.clone(options) : {};
       if (options.parse === void 0) options.parse = true;
-      var model = this;
       var success = options.success;
-      options.success = function(resp, status, xhr) {
-        if (!model.set(model.parse(resp), options)) return false;
+      options.success = function(model, resp, options) {
+        if (!model.set(model.parse(resp, options), options)) return false;
         if (success) success(model, resp, options);
       };
       return this.sync('read', this, options);
@@ -1986,55 +2055,51 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     // If the server returns an attributes hash that differs, the model's
     // state will be `set` again.
     save: function(key, val, options) {
-      var attrs, current, done;
+      var attrs, success, method, xhr, attributes = this.attributes;
 
       // Handle both `"key", value` and `{key: value}` -style arguments.
-      if (key == null || _.isObject(key)) {
+      if (key == null || typeof key === 'object') {
         attrs = key;
         options = val;
-      } else if (key != null) {
+      } else {
         (attrs = {})[key] = val;
       }
-      options = options ? _.clone(options) : {};
 
-      // If we're "wait"-ing to set changed attributes, validate early.
-      if (options.wait) {
-        if (attrs && !this._validate(attrs, options)) return false;
-        current = _.clone(this.attributes);
-      }
+      // If we're not waiting and attributes exist, save acts as `set(attr).save(null, opts)`.
+      if (attrs && (!options || !options.wait) && !this.set(attrs, options)) return false;
 
-      // Regular saves `set` attributes before persisting to the server.
-      var silentOptions = _.extend({}, options, {silent: true});
-      if (attrs && !this.set(attrs, options.wait ? silentOptions : options)) {
-        return false;
-      }
+      options = _.extend({validate: true}, options);
 
       // Do not persist invalid models.
-      if (!attrs && !this._validate(null, options)) return false;
+      if (!this._validate(attrs, options)) return false;
+
+      // Set temporary attributes if `{wait: true}`.
+      if (attrs && options.wait) {
+        this.attributes = _.extend({}, attributes, attrs);
+      }
 
       // After a successful server-side save, the client is (optionally)
       // updated with the server-side state.
-      var model = this;
-      var success = options.success;
-      options.success = function(resp, status, xhr) {
-        done = true;
-        var serverAttrs = model.parse(resp);
+      if (options.parse === void 0) options.parse = true;
+      success = options.success;
+      options.success = function(model, resp, options) {
+        // Ensure attributes are restored during synchronous saves.
+        model.attributes = attributes;
+        var serverAttrs = model.parse(resp, options);
         if (options.wait) serverAttrs = _.extend(attrs || {}, serverAttrs);
-        if (!model.set(serverAttrs, options)) return false;
+        if (_.isObject(serverAttrs) && !model.set(serverAttrs, options)) {
+          return false;
+        }
         if (success) success(model, resp, options);
       };
 
       // Finish configuring and sending the Ajax request.
-      var method = this.isNew() ? 'create' : (options.patch ? 'patch' : 'update');
-      if (method == 'patch') options.attrs = attrs;
-      var xhr = this.sync(method, this, options);
+      method = this.isNew() ? 'create' : (options.patch ? 'patch' : 'update');
+      if (method === 'patch') options.attrs = attrs;
+      xhr = this.sync(method, this, options);
 
-      // When using `wait`, reset attributes to original values unless
-      // `success` has been called already.
-      if (!done && options.wait) {
-        this.clear(silentOptions);
-        this.set(current, silentOptions);
-      }
+      // Restore attributes.
+      if (attrs && options.wait) this.attributes = attributes;
 
       return xhr;
     },
@@ -2051,13 +2116,13 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
         model.trigger('destroy', model, model.collection, options);
       };
 
-      options.success = function(resp) {
+      options.success = function(model, resp, options) {
         if (options.wait || model.isNew()) destroy();
         if (success) success(model, resp, options);
       };
 
       if (this.isNew()) {
-        options.success();
+        options.success(this, null, options);
         return false;
       }
 
@@ -2077,7 +2142,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
 
     // **parse** converts a response into the hash of attributes to be `set` on
     // the model. The default implementation is just to pass the response along.
-    parse: function(resp) {
+    parse: function(resp, options) {
       return resp;
     },
 
@@ -2091,115 +2156,20 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
       return this.id == null;
     },
 
-    // Call this method to manually fire a `"change"` event for this model and
-    // a `"change:attribute"` event for each changed attribute.
-    // Calling this will cause all objects observing the model to update.
-    change: function(options) {
-      var changing = this._changing;
-      this._changing = true;
-
-      // Generate the changes to be triggered on the model.
-      var triggers = this._computeChanges(true);
-
-      this._pending = !!triggers.length;
-
-      for (var i = triggers.length - 2; i >= 0; i -= 2) {
-        this.trigger('change:' + triggers[i], this, triggers[i + 1], options);
-      }
-
-      if (changing) return this;
-
-      // Trigger a `change` while there have been changes.
-      while (this._pending) {
-        this._pending = false;
-        this.trigger('change', this, options);
-        this._previousAttributes = _.clone(this.attributes);
-      }
-
-      this._changing = false;
-      return this;
-    },
-
-    // Determine if the model has changed since the last `"change"` event.
-    // If you specify an attribute name, determine if that attribute has changed.
-    hasChanged: function(attr) {
-      if (!this._hasComputed) this._computeChanges();
-      if (attr == null) return !_.isEmpty(this.changed);
-      return _.has(this.changed, attr);
-    },
-
-    // Return an object containing all the attributes that have changed, or
-    // false if there are no changed attributes. Useful for determining what
-    // parts of a view need to be updated and/or what attributes need to be
-    // persisted to the server. Unset attributes will be set to undefined.
-    // You can also pass an attributes object to diff against the model,
-    // determining if there *would be* a change.
-    changedAttributes: function(diff) {
-      if (!diff) return this.hasChanged() ? _.clone(this.changed) : false;
-      var val, changed = false, old = this._previousAttributes;
-      for (var attr in diff) {
-        if (_.isEqual(old[attr], (val = diff[attr]))) continue;
-        (changed || (changed = {}))[attr] = val;
-      }
-      return changed;
-    },
-
-    // Looking at the built up list of `set` attribute changes, compute how
-    // many of the attributes have actually changed. If `loud`, return a
-    // boiled-down list of only the real changes.
-    _computeChanges: function(loud) {
-      this.changed = {};
-      var already = {};
-      var triggers = [];
-      var current = this._currentAttributes;
-      var changes = this._changes;
-
-      // Loop through the current queue of potential model changes.
-      for (var i = changes.length - 2; i >= 0; i -= 2) {
-        var key = changes[i], val = changes[i + 1];
-        if (already[key]) continue;
-        already[key] = true;
-
-        // Check if the attribute has been modified since the last change,
-        // and update `this.changed` accordingly. If we're inside of a `change`
-        // call, also add a trigger to the list.
-        if (current[key] !== val) {
-          this.changed[key] = val;
-          if (!loud) continue;
-          triggers.push(key, val);
-          current[key] = val;
-        }
-      }
-      if (loud) this._changes = [];
-
-      // Signals `this.changed` is current to prevent duplicate calls from `this.hasChanged`.
-      this._hasComputed = true;
-      return triggers;
-    },
-
-    // Get the previous value of an attribute, recorded at the time the last
-    // `"change"` event was fired.
-    previous: function(attr) {
-      if (attr == null || !this._previousAttributes) return null;
-      return this._previousAttributes[attr];
-    },
-
-    // Get all of the attributes of the model at the time of the previous
-    // `"change"` event.
-    previousAttributes: function() {
-      return _.clone(this._previousAttributes);
+    // Check if the model is currently in a valid state.
+    isValid: function(options) {
+      return !this.validate || !this.validate(this.attributes, options);
     },
 
     // Run validation against the next complete set of model attributes,
-    // returning `true` if all is well. If a specific `error` callback has
-    // been passed, call that instead of firing the general `"error"` event.
+    // returning `true` if all is well. Otherwise, fire a general
+    // `"error"` event and call the error callback, if specified.
     _validate: function(attrs, options) {
-      if (!this.validate) return true;
+      if (!options.validate || !this.validate) return true;
       attrs = _.extend({}, this.attributes, attrs);
-      var error = this.validate(attrs, options);
+      var error = this.validationError = this.validate(attrs, options) || null;
       if (!error) return true;
-      if (options && options.error) options.error(this, error, options);
-      this.trigger('error', this, error, options);
+      this.trigger('invalid', this, error, options || {});
       return false;
     }
 
@@ -2215,6 +2185,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     options || (options = {});
     if (options.model) this.model = options.model;
     if (options.comparator !== void 0) this.comparator = options.comparator;
+    this.models = [];
     this._reset();
     this.initialize.apply(this, arguments);
     if (models) this.reset(models, _.extend({silent: true}, options));
@@ -2242,74 +2213,81 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
       return Backbone.sync.apply(this, arguments);
     },
 
-    // Add a model, or list of models to the set. Pass **silent** to avoid
-    // firing the `add` event for every new model.
+    // Add a model, or list of models to the set.
     add: function(models, options) {
-      var i, args, length, model, existing, needsSort;
-      var at = options && options.at;
-      var sort = ((options && options.sort) == null ? true : options.sort);
       models = _.isArray(models) ? models.slice() : [models];
+      options || (options = {});
+      var i, l, model, attrs, existing, doSort, add, at, sort, sortAttr;
+      add = [];
+      at = options.at;
+      sort = this.comparator && (at == null) && options.sort != false;
+      sortAttr = _.isString(this.comparator) ? this.comparator : null;
 
       // Turn bare objects into model references, and prevent invalid models
       // from being added.
-      for (i = models.length - 1; i >= 0; i--) {
-        if(!(model = this._prepareModel(models[i], options))) {
-          this.trigger("error", this, models[i], options);
-          models.splice(i, 1);
+      for (i = 0, l = models.length; i < l; i++) {
+        if (!(model = this._prepareModel(attrs = models[i], options))) {
+          this.trigger('invalid', this, attrs, options);
           continue;
         }
-        models[i] = model;
 
-        existing = model.id != null && this._byId[model.id];
         // If a duplicate is found, prevent it from being added and
         // optionally merge it into the existing model.
-        if (existing || this._byCid[model.cid]) {
-          if (options && options.merge && existing) {
-            existing.set(model.attributes, options);
-            needsSort = sort;
+        if (existing = this.get(model)) {
+          if (options.merge) {
+            existing.set(attrs === model ? model.attributes : attrs, options);
+            if (sort && !doSort && existing.hasChanged(sortAttr)) doSort = true;
           }
-          models.splice(i, 1);
           continue;
         }
+
+        // This is a new model, push it to the `add` list.
+        add.push(model);
 
         // Listen to added models' events, and index models for lookup by
         // `id` and by `cid`.
         model.on('all', this._onModelEvent, this);
-        this._byCid[model.cid] = model;
+        this._byId[model.cid] = model;
         if (model.id != null) this._byId[model.id] = model;
       }
 
       // See if sorting is needed, update `length` and splice in new models.
-      if (models.length) needsSort = sort;
-      this.length += models.length;
-      args = [at != null ? at : this.models.length, 0];
-      push.apply(args, models);
-      splice.apply(this.models, args);
+      if (add.length) {
+        if (sort) doSort = true;
+        this.length += add.length;
+        if (at != null) {
+          splice.apply(this.models, [at, 0].concat(add));
+        } else {
+          push.apply(this.models, add);
+        }
+      }
 
-      // Sort the collection if appropriate.
-      if (needsSort && this.comparator && at == null) this.sort({silent: true});
+      // Silently sort the collection if appropriate.
+      if (doSort) this.sort({silent: true});
 
-      if (options && options.silent) return this;
+      if (options.silent) return this;
 
       // Trigger `add` events.
-      while (model = models.shift()) {
-        model.trigger('add', model, this, options);
+      for (i = 0, l = add.length; i < l; i++) {
+        (model = add[i]).trigger('add', model, this, options);
       }
+
+      // Trigger `sort` if the collection was sorted.
+      if (doSort) this.trigger('sort', this, options);
 
       return this;
     },
 
-    // Remove a model, or a list of models from the set. Pass silent to avoid
-    // firing the `remove` event for every model removed.
+    // Remove a model, or a list of models from the set.
     remove: function(models, options) {
-      var i, l, index, model;
-      options || (options = {});
       models = _.isArray(models) ? models.slice() : [models];
+      options || (options = {});
+      var i, l, index, model;
       for (i = 0, l = models.length; i < l; i++) {
         model = this.get(models[i]);
         if (!model) continue;
         delete this._byId[model.id];
-        delete this._byCid[model.cid];
+        delete this._byId[model.cid];
         index = this.indexOf(model);
         this.models.splice(index, 1);
         this.length--;
@@ -2358,7 +2336,8 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     // Get a model from the set by id.
     get: function(obj) {
       if (obj == null) return void 0;
-      return this._byId[obj.id != null ? obj.id : obj] || this._byCid[obj.cid || obj];
+      this._idAttr || (this._idAttr = this.model.prototype.idAttribute);
+      return this._byId[obj.id || obj.cid || obj[this._idAttr] || obj];
     },
 
     // Get the model at the given index.
@@ -2384,14 +2363,16 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
       if (!this.comparator) {
         throw new Error('Cannot sort a set without a comparator');
       }
+      options || (options = {});
 
+      // Run sort based on type of `comparator`.
       if (_.isString(this.comparator) || this.comparator.length === 1) {
         this.models = this.sortBy(this.comparator, this);
       } else {
         this.models.sort(_.bind(this.comparator, this));
       }
 
-      if (!options || !options.silent) this.trigger('sort', this, options);
+      if (!options.silent) this.trigger('sort', this, options);
       return this;
     },
 
@@ -2403,11 +2384,10 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     // Smartly update a collection with a change set of models, adding,
     // removing, and merging as necessary.
     update: function(models, options) {
+      options = _.extend({add: true, merge: true, remove: true}, options);
+      if (options.parse) models = this.parse(models, options);
       var model, i, l, existing;
       var add = [], remove = [], modelMap = {};
-      var idAttr = this.model.prototype.idAttribute;
-      options = _.extend({add: true, merge: true, remove: true}, options);
-      if (options.parse) models = this.parse(models);
 
       // Allow a single model (or no argument) to be passed.
       if (!_.isArray(models)) models = models ? [models] : [];
@@ -2418,7 +2398,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
       // Determine which models to add and merge, and which to remove.
       for (i = 0, l = models.length; i < l; i++) {
         model = models[i];
-        existing = this.get(model.id || model.cid || model[idAttr]);
+        existing = this.get(model);
         if (options.remove && existing) modelMap[existing.cid] = true;
         if ((options.add && !existing) || (options.merge && existing)) {
           add.push(model);
@@ -2442,11 +2422,11 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     // any `add` or `remove` events. Fires `reset` when finished.
     reset: function(models, options) {
       options || (options = {});
-      if (options.parse) models = this.parse(models);
+      if (options.parse) models = this.parse(models, options);
       for (var i = 0, l = this.models.length; i < l; i++) {
         this._removeReference(this.models[i]);
       }
-      options.previousModels = this.models;
+      options.previousModels = this.models.slice();
       this._reset();
       if (models) this.add(models, _.extend({silent: true}, options));
       if (!options.silent) this.trigger('reset', this, options);
@@ -2454,14 +2434,13 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     },
 
     // Fetch the default set of models for this collection, resetting the
-    // collection when they arrive. If `add: true` is passed, appends the
-    // models to the collection instead of resetting.
+    // collection when they arrive. If `update: true` is passed, the response
+    // data will be passed through the `update` method instead of `reset`.
     fetch: function(options) {
       options = options ? _.clone(options) : {};
       if (options.parse === void 0) options.parse = true;
-      var collection = this;
       var success = options.success;
-      options.success = function(resp, status, xhr) {
+      options.success = function(collection, resp, options) {
         var method = options.update ? 'update' : 'reset';
         collection[method](resp, options);
         if (success) success(collection, resp, options);
@@ -2473,11 +2452,10 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     // collection immediately, unless `wait: true` is passed, in which case we
     // wait for the server to agree.
     create: function(model, options) {
-      var collection = this;
       options = options ? _.clone(options) : {};
-      model = this._prepareModel(model, options);
-      if (!model) return false;
-      if (!options.wait) collection.add(model, options);
+      if (!(model = this._prepareModel(model, options))) return false;
+      if (!options.wait) this.add(model, options);
+      var collection = this;
       var success = options.success;
       options.success = function(model, resp, options) {
         if (options.wait) collection.add(model, options);
@@ -2489,7 +2467,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
 
     // **parse** converts a response into a list of models to be added to the
     // collection. The default implementation is just to pass it through.
-    parse: function(resp) {
+    parse: function(resp, options) {
       return resp;
     },
 
@@ -2498,19 +2476,11 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
       return new this.constructor(this.models);
     },
 
-    // Proxy to _'s chain. Can't be proxied the same way the rest of the
-    // underscore methods are proxied because it relies on the underscore
-    // constructor.
-    chain: function() {
-      return _(this.models).chain();
-    },
-
     // Reset all internal state. Called when the collection is reset.
     _reset: function() {
       this.length = 0;
-      this.models = [];
+      this.models.length = 0;
       this._byId  = {};
-      this._byCid = {};
     },
 
     // Prepare a model or hash of attributes to be added to this collection.
@@ -2544,6 +2514,14 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
         if (model.id != null) this._byId[model.id] = model;
       }
       this.trigger.apply(this, arguments);
+    },
+
+    sortedIndex: function (model, value, context) {
+      value || (value = this.comparator);
+      var iterator = _.isFunction(value) ? value : function(model) {
+        return model.get(value);
+      };
+      return _.sortedIndex(this.models, model, iterator, context);
     }
 
   });
@@ -2552,9 +2530,9 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
   var methods = ['forEach', 'each', 'map', 'collect', 'reduce', 'foldl',
     'inject', 'reduceRight', 'foldr', 'find', 'detect', 'filter', 'select',
     'reject', 'every', 'all', 'some', 'any', 'include', 'contains', 'invoke',
-    'max', 'min', 'sortedIndex', 'toArray', 'size', 'first', 'head', 'take',
-    'initial', 'rest', 'tail', 'last', 'without', 'indexOf', 'shuffle',
-    'lastIndexOf', 'isEmpty'];
+    'max', 'min', 'toArray', 'size', 'first', 'head', 'take', 'initial', 'rest',
+    'tail', 'drop', 'last', 'without', 'indexOf', 'shuffle', 'lastIndexOf',
+    'isEmpty', 'chain'];
 
   // Mix in each Underscore method as a proxy to `Collection#models`.
   _.each(methods, function(method) {
@@ -2593,7 +2571,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
   // Cached regular expressions for matching named param parts and splatted
   // parts of route strings.
   var optionalParam = /\((.*?)\)/g;
-  var namedParam    = /:\w+/g;
+  var namedParam    = /(\(\?)?:\w+/g;
   var splatParam    = /\*\w+/g;
   var escapeRegExp  = /[\-{}\[\]+?.,\\\^$|#\s]/g;
 
@@ -2617,6 +2595,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
         var args = this._extractParameters(route, fragment);
         callback && callback.apply(this, args);
         this.trigger.apply(this, ['route:' + name].concat(args));
+        this.trigger('route', name, args);
         Backbone.history.trigger('route', this, name, args);
       }, this));
       return this;
@@ -2644,7 +2623,9 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     _routeToRegExp: function(route) {
       route = route.replace(escapeRegExp, '\\$&')
                    .replace(optionalParam, '(?:$1)?')
-                   .replace(namedParam, '([^\/]+)')
+                   .replace(namedParam, function(match, optional){
+                     return optional ? match : '([^\/]+)';
+                   })
                    .replace(splatParam, '(.*?)');
       return new RegExp('^' + route + '$');
     },
@@ -2666,7 +2647,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     this.handlers = [];
     _.bindAll(this, 'checkUrl');
 
-    // #1653 - Ensure that `History` can be used outside of the browser.
+    // Ensure that `History` can be used outside of the browser.
     if (typeof window !== 'undefined') {
       this.location = window.location;
       this.history = window.history;
@@ -2745,9 +2726,9 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
       // Depending on whether we're using pushState or hashes, and whether
       // 'onhashchange' is supported, determine how we check the URL state.
       if (this._hasPushState) {
-        Backbone.$(window).bind('popstate', this.checkUrl);
+        Backbone.$(window).on('popstate', this.checkUrl);
       } else if (this._wantsHashChange && ('onhashchange' in window) && !oldIE) {
-        Backbone.$(window).bind('hashchange', this.checkUrl);
+        Backbone.$(window).on('hashchange', this.checkUrl);
       } else if (this._wantsHashChange) {
         this._checkUrlInterval = setInterval(this.checkUrl, this.interval);
       }
@@ -2779,7 +2760,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     // Disable Backbone.history, perhaps temporarily. Not useful in a real app,
     // but possibly useful for unit testing Routers.
     stop: function() {
-      Backbone.$(window).unbind('popstate', this.checkUrl).unbind('hashchange', this.checkUrl);
+      Backbone.$(window).off('popstate', this.checkUrl).off('hashchange', this.checkUrl);
       clearInterval(this._checkUrlInterval);
       History.started = false;
     },
@@ -2862,7 +2843,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
         var href = location.href.replace(/(javascript:|#).*$/, '');
         location.replace(href + '#' + fragment);
       } else {
-        // #1649 - Some browsers require that `hash` contains a leading #.
+        // Some browsers require that `hash` contains a leading #.
         location.hash = '#' + fragment;
       }
     }
@@ -2922,18 +2903,6 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
       return this;
     },
 
-    // For small amounts of DOM Elements, where a full-blown template isn't
-    // needed, use **make** to manufacture elements, one at a time.
-    //
-    //     var el = this.make('li', {'class': 'row'}, this.model.escape('title'));
-    //
-    make: function(tagName, attributes, content) {
-      var el = document.createElement(tagName);
-      if (attributes) Backbone.$(el).attr(attributes);
-      if (content != null) Backbone.$(el).html(content);
-      return el;
-    },
-
     // Change the view's element (`this.el` property), including event
     // re-delegation.
     setElement: function(element, delegate) {
@@ -2971,9 +2940,9 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
         method = _.bind(method, this);
         eventName += '.delegateEvents' + this.cid;
         if (selector === '') {
-          this.$el.bind(eventName, method);
+          this.$el.on(eventName, method);
         } else {
-          this.$el.delegate(selector, eventName, method);
+          this.$el.on(eventName, selector, method);
         }
       }
     },
@@ -2982,7 +2951,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     // You usually don't need to use this, but may wish to if you have multiple
     // Backbone views attached to the same DOM element.
     undelegateEvents: function() {
-      this.$el.unbind('.delegateEvents' + this.cid);
+      this.$el.off('.delegateEvents' + this.cid);
     },
 
     // Performs the initial configuration of a View with a set of options.
@@ -3003,7 +2972,8 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
         var attrs = _.extend({}, _.result(this, 'attributes'));
         if (this.id) attrs.id = _.result(this, 'id');
         if (this.className) attrs['class'] = _.result(this, 'className');
-        this.setElement(this.make(_.result(this, 'tagName'), attrs), false);
+        var $el = Backbone.$('<' + _.result(this, 'tagName') + '>').attr(attrs);
+        this.setElement($el, false);
       } else {
         this.setElement(_.result(this, 'el'), false);
       }
@@ -3085,19 +3055,19 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     }
 
     var success = options.success;
-    options.success = function(resp, status, xhr) {
-      if (success) success(resp, status, xhr);
+    options.success = function(resp) {
+      if (success) success(model, resp, options);
       model.trigger('sync', model, resp, options);
     };
 
     var error = options.error;
-    options.error = function(xhr, status, thrown) {
+    options.error = function(xhr) {
       if (error) error(model, xhr, options);
       model.trigger('error', model, xhr, options);
     };
 
     // Make the request, allowing the user to override any Ajax options.
-    var xhr = Backbone.ajax(_.extend(params, options));
+    var xhr = options.xhr = Backbone.ajax(_.extend(params, options));
     model.trigger('request', model, xhr, options);
     return xhr;
   };
@@ -3123,7 +3093,7 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
     if (protoProps && _.has(protoProps, 'constructor')) {
       child = protoProps.constructor;
     } else {
-      child = function(){ parent.apply(this, arguments); };
+      child = function(){ return parent.apply(this, arguments); };
     }
 
     // Add static properties to the constructor function, if supplied.
@@ -3153,1233 +3123,6 @@ require.define("/node_modules/backbone/backbone.js",function(require,module,expo
   var urlError = function() {
     throw new Error('A "url" property or function must be specified');
   };
-
-}).call(this);
-
-});
-
-require.define("/node_modules/backbone/node_modules/underscore/package.json",function(require,module,exports,__dirname,__filename,process,global){module.exports = {"main":"underscore.js"}
-});
-
-require.define("/node_modules/backbone/node_modules/underscore/underscore.js",function(require,module,exports,__dirname,__filename,process,global){//     Underscore.js 1.4.3
-//     http://underscorejs.org
-//     (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
-//     Underscore may be freely distributed under the MIT license.
-
-(function() {
-
-  // Baseline setup
-  // --------------
-
-  // Establish the root object, `window` in the browser, or `global` on the server.
-  var root = this;
-
-  // Save the previous value of the `_` variable.
-  var previousUnderscore = root._;
-
-  // Establish the object that gets returned to break out of a loop iteration.
-  var breaker = {};
-
-  // Save bytes in the minified (but not gzipped) version:
-  var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
-
-  // Create quick reference variables for speed access to core prototypes.
-  var push             = ArrayProto.push,
-      slice            = ArrayProto.slice,
-      concat           = ArrayProto.concat,
-      toString         = ObjProto.toString,
-      hasOwnProperty   = ObjProto.hasOwnProperty;
-
-  // All **ECMAScript 5** native function implementations that we hope to use
-  // are declared here.
-  var
-    nativeForEach      = ArrayProto.forEach,
-    nativeMap          = ArrayProto.map,
-    nativeReduce       = ArrayProto.reduce,
-    nativeReduceRight  = ArrayProto.reduceRight,
-    nativeFilter       = ArrayProto.filter,
-    nativeEvery        = ArrayProto.every,
-    nativeSome         = ArrayProto.some,
-    nativeIndexOf      = ArrayProto.indexOf,
-    nativeLastIndexOf  = ArrayProto.lastIndexOf,
-    nativeIsArray      = Array.isArray,
-    nativeKeys         = Object.keys,
-    nativeBind         = FuncProto.bind;
-
-  // Create a safe reference to the Underscore object for use below.
-  var _ = function(obj) {
-    if (obj instanceof _) return obj;
-    if (!(this instanceof _)) return new _(obj);
-    this._wrapped = obj;
-  };
-
-  // Export the Underscore object for **Node.js**, with
-  // backwards-compatibility for the old `require()` API. If we're in
-  // the browser, add `_` as a global object via a string identifier,
-  // for Closure Compiler "advanced" mode.
-  if (typeof exports !== 'undefined') {
-    if (typeof module !== 'undefined' && module.exports) {
-      exports = module.exports = _;
-    }
-    exports._ = _;
-  } else {
-    root._ = _;
-  }
-
-  // Current version.
-  _.VERSION = '1.4.3';
-
-  // Collection Functions
-  // --------------------
-
-  // The cornerstone, an `each` implementation, aka `forEach`.
-  // Handles objects with the built-in `forEach`, arrays, and raw objects.
-  // Delegates to **ECMAScript 5**'s native `forEach` if available.
-  var each = _.each = _.forEach = function(obj, iterator, context) {
-    if (obj == null) return;
-    if (nativeForEach && obj.forEach === nativeForEach) {
-      obj.forEach(iterator, context);
-    } else if (obj.length === +obj.length) {
-      for (var i = 0, l = obj.length; i < l; i++) {
-        if (iterator.call(context, obj[i], i, obj) === breaker) return;
-      }
-    } else {
-      for (var key in obj) {
-        if (_.has(obj, key)) {
-          if (iterator.call(context, obj[key], key, obj) === breaker) return;
-        }
-      }
-    }
-  };
-
-  // Return the results of applying the iterator to each element.
-  // Delegates to **ECMAScript 5**'s native `map` if available.
-  _.map = _.collect = function(obj, iterator, context) {
-    var results = [];
-    if (obj == null) return results;
-    if (nativeMap && obj.map === nativeMap) return obj.map(iterator, context);
-    each(obj, function(value, index, list) {
-      results[results.length] = iterator.call(context, value, index, list);
-    });
-    return results;
-  };
-
-  var reduceError = 'Reduce of empty array with no initial value';
-
-  // **Reduce** builds up a single result from a list of values, aka `inject`,
-  // or `foldl`. Delegates to **ECMAScript 5**'s native `reduce` if available.
-  _.reduce = _.foldl = _.inject = function(obj, iterator, memo, context) {
-    var initial = arguments.length > 2;
-    if (obj == null) obj = [];
-    if (nativeReduce && obj.reduce === nativeReduce) {
-      if (context) iterator = _.bind(iterator, context);
-      return initial ? obj.reduce(iterator, memo) : obj.reduce(iterator);
-    }
-    each(obj, function(value, index, list) {
-      if (!initial) {
-        memo = value;
-        initial = true;
-      } else {
-        memo = iterator.call(context, memo, value, index, list);
-      }
-    });
-    if (!initial) throw new TypeError(reduceError);
-    return memo;
-  };
-
-  // The right-associative version of reduce, also known as `foldr`.
-  // Delegates to **ECMAScript 5**'s native `reduceRight` if available.
-  _.reduceRight = _.foldr = function(obj, iterator, memo, context) {
-    var initial = arguments.length > 2;
-    if (obj == null) obj = [];
-    if (nativeReduceRight && obj.reduceRight === nativeReduceRight) {
-      if (context) iterator = _.bind(iterator, context);
-      return initial ? obj.reduceRight(iterator, memo) : obj.reduceRight(iterator);
-    }
-    var length = obj.length;
-    if (length !== +length) {
-      var keys = _.keys(obj);
-      length = keys.length;
-    }
-    each(obj, function(value, index, list) {
-      index = keys ? keys[--length] : --length;
-      if (!initial) {
-        memo = obj[index];
-        initial = true;
-      } else {
-        memo = iterator.call(context, memo, obj[index], index, list);
-      }
-    });
-    if (!initial) throw new TypeError(reduceError);
-    return memo;
-  };
-
-  // Return the first value which passes a truth test. Aliased as `detect`.
-  _.find = _.detect = function(obj, iterator, context) {
-    var result;
-    any(obj, function(value, index, list) {
-      if (iterator.call(context, value, index, list)) {
-        result = value;
-        return true;
-      }
-    });
-    return result;
-  };
-
-  // Return all the elements that pass a truth test.
-  // Delegates to **ECMAScript 5**'s native `filter` if available.
-  // Aliased as `select`.
-  _.filter = _.select = function(obj, iterator, context) {
-    var results = [];
-    if (obj == null) return results;
-    if (nativeFilter && obj.filter === nativeFilter) return obj.filter(iterator, context);
-    each(obj, function(value, index, list) {
-      if (iterator.call(context, value, index, list)) results[results.length] = value;
-    });
-    return results;
-  };
-
-  // Return all the elements for which a truth test fails.
-  _.reject = function(obj, iterator, context) {
-    return _.filter(obj, function(value, index, list) {
-      return !iterator.call(context, value, index, list);
-    }, context);
-  };
-
-  // Determine whether all of the elements match a truth test.
-  // Delegates to **ECMAScript 5**'s native `every` if available.
-  // Aliased as `all`.
-  _.every = _.all = function(obj, iterator, context) {
-    iterator || (iterator = _.identity);
-    var result = true;
-    if (obj == null) return result;
-    if (nativeEvery && obj.every === nativeEvery) return obj.every(iterator, context);
-    each(obj, function(value, index, list) {
-      if (!(result = result && iterator.call(context, value, index, list))) return breaker;
-    });
-    return !!result;
-  };
-
-  // Determine if at least one element in the object matches a truth test.
-  // Delegates to **ECMAScript 5**'s native `some` if available.
-  // Aliased as `any`.
-  var any = _.some = _.any = function(obj, iterator, context) {
-    iterator || (iterator = _.identity);
-    var result = false;
-    if (obj == null) return result;
-    if (nativeSome && obj.some === nativeSome) return obj.some(iterator, context);
-    each(obj, function(value, index, list) {
-      if (result || (result = iterator.call(context, value, index, list))) return breaker;
-    });
-    return !!result;
-  };
-
-  // Determine if the array or object contains a given value (using `===`).
-  // Aliased as `include`.
-  _.contains = _.include = function(obj, target) {
-    if (obj == null) return false;
-    if (nativeIndexOf && obj.indexOf === nativeIndexOf) return obj.indexOf(target) != -1;
-    return any(obj, function(value) {
-      return value === target;
-    });
-  };
-
-  // Invoke a method (with arguments) on every item in a collection.
-  _.invoke = function(obj, method) {
-    var args = slice.call(arguments, 2);
-    return _.map(obj, function(value) {
-      return (_.isFunction(method) ? method : value[method]).apply(value, args);
-    });
-  };
-
-  // Convenience version of a common use case of `map`: fetching a property.
-  _.pluck = function(obj, key) {
-    return _.map(obj, function(value){ return value[key]; });
-  };
-
-  // Convenience version of a common use case of `filter`: selecting only objects
-  // with specific `key:value` pairs.
-  _.where = function(obj, attrs) {
-    if (_.isEmpty(attrs)) return [];
-    return _.filter(obj, function(value) {
-      for (var key in attrs) {
-        if (attrs[key] !== value[key]) return false;
-      }
-      return true;
-    });
-  };
-
-  // Return the maximum element or (element-based computation).
-  // Can't optimize arrays of integers longer than 65,535 elements.
-  // See: https://bugs.webkit.org/show_bug.cgi?id=80797
-  _.max = function(obj, iterator, context) {
-    if (!iterator && _.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
-      return Math.max.apply(Math, obj);
-    }
-    if (!iterator && _.isEmpty(obj)) return -Infinity;
-    var result = {computed : -Infinity, value: -Infinity};
-    each(obj, function(value, index, list) {
-      var computed = iterator ? iterator.call(context, value, index, list) : value;
-      computed >= result.computed && (result = {value : value, computed : computed});
-    });
-    return result.value;
-  };
-
-  // Return the minimum element (or element-based computation).
-  _.min = function(obj, iterator, context) {
-    if (!iterator && _.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
-      return Math.min.apply(Math, obj);
-    }
-    if (!iterator && _.isEmpty(obj)) return Infinity;
-    var result = {computed : Infinity, value: Infinity};
-    each(obj, function(value, index, list) {
-      var computed = iterator ? iterator.call(context, value, index, list) : value;
-      computed < result.computed && (result = {value : value, computed : computed});
-    });
-    return result.value;
-  };
-
-  // Shuffle an array.
-  _.shuffle = function(obj) {
-    var rand;
-    var index = 0;
-    var shuffled = [];
-    each(obj, function(value) {
-      rand = _.random(index++);
-      shuffled[index - 1] = shuffled[rand];
-      shuffled[rand] = value;
-    });
-    return shuffled;
-  };
-
-  // An internal function to generate lookup iterators.
-  var lookupIterator = function(value) {
-    return _.isFunction(value) ? value : function(obj){ return obj[value]; };
-  };
-
-  // Sort the object's values by a criterion produced by an iterator.
-  _.sortBy = function(obj, value, context) {
-    var iterator = lookupIterator(value);
-    return _.pluck(_.map(obj, function(value, index, list) {
-      return {
-        value : value,
-        index : index,
-        criteria : iterator.call(context, value, index, list)
-      };
-    }).sort(function(left, right) {
-      var a = left.criteria;
-      var b = right.criteria;
-      if (a !== b) {
-        if (a > b || a === void 0) return 1;
-        if (a < b || b === void 0) return -1;
-      }
-      return left.index < right.index ? -1 : 1;
-    }), 'value');
-  };
-
-  // An internal function used for aggregate "group by" operations.
-  var group = function(obj, value, context, behavior) {
-    var result = {};
-    var iterator = lookupIterator(value || _.identity);
-    each(obj, function(value, index) {
-      var key = iterator.call(context, value, index, obj);
-      behavior(result, key, value);
-    });
-    return result;
-  };
-
-  // Groups the object's values by a criterion. Pass either a string attribute
-  // to group by, or a function that returns the criterion.
-  _.groupBy = function(obj, value, context) {
-    return group(obj, value, context, function(result, key, value) {
-      (_.has(result, key) ? result[key] : (result[key] = [])).push(value);
-    });
-  };
-
-  // Counts instances of an object that group by a certain criterion. Pass
-  // either a string attribute to count by, or a function that returns the
-  // criterion.
-  _.countBy = function(obj, value, context) {
-    return group(obj, value, context, function(result, key) {
-      if (!_.has(result, key)) result[key] = 0;
-      result[key]++;
-    });
-  };
-
-  // Use a comparator function to figure out the smallest index at which
-  // an object should be inserted so as to maintain order. Uses binary search.
-  _.sortedIndex = function(array, obj, iterator, context) {
-    iterator = iterator == null ? _.identity : lookupIterator(iterator);
-    var value = iterator.call(context, obj);
-    var low = 0, high = array.length;
-    while (low < high) {
-      var mid = (low + high) >>> 1;
-      iterator.call(context, array[mid]) < value ? low = mid + 1 : high = mid;
-    }
-    return low;
-  };
-
-  // Safely convert anything iterable into a real, live array.
-  _.toArray = function(obj) {
-    if (!obj) return [];
-    if (_.isArray(obj)) return slice.call(obj);
-    if (obj.length === +obj.length) return _.map(obj, _.identity);
-    return _.values(obj);
-  };
-
-  // Return the number of elements in an object.
-  _.size = function(obj) {
-    if (obj == null) return 0;
-    return (obj.length === +obj.length) ? obj.length : _.keys(obj).length;
-  };
-
-  // Array Functions
-  // ---------------
-
-  // Get the first element of an array. Passing **n** will return the first N
-  // values in the array. Aliased as `head` and `take`. The **guard** check
-  // allows it to work with `_.map`.
-  _.first = _.head = _.take = function(array, n, guard) {
-    if (array == null) return void 0;
-    return (n != null) && !guard ? slice.call(array, 0, n) : array[0];
-  };
-
-  // Returns everything but the last entry of the array. Especially useful on
-  // the arguments object. Passing **n** will return all the values in
-  // the array, excluding the last N. The **guard** check allows it to work with
-  // `_.map`.
-  _.initial = function(array, n, guard) {
-    return slice.call(array, 0, array.length - ((n == null) || guard ? 1 : n));
-  };
-
-  // Get the last element of an array. Passing **n** will return the last N
-  // values in the array. The **guard** check allows it to work with `_.map`.
-  _.last = function(array, n, guard) {
-    if (array == null) return void 0;
-    if ((n != null) && !guard) {
-      return slice.call(array, Math.max(array.length - n, 0));
-    } else {
-      return array[array.length - 1];
-    }
-  };
-
-  // Returns everything but the first entry of the array. Aliased as `tail` and `drop`.
-  // Especially useful on the arguments object. Passing an **n** will return
-  // the rest N values in the array. The **guard**
-  // check allows it to work with `_.map`.
-  _.rest = _.tail = _.drop = function(array, n, guard) {
-    return slice.call(array, (n == null) || guard ? 1 : n);
-  };
-
-  // Trim out all falsy values from an array.
-  _.compact = function(array) {
-    return _.filter(array, _.identity);
-  };
-
-  // Internal implementation of a recursive `flatten` function.
-  var flatten = function(input, shallow, output) {
-    each(input, function(value) {
-      if (_.isArray(value)) {
-        shallow ? push.apply(output, value) : flatten(value, shallow, output);
-      } else {
-        output.push(value);
-      }
-    });
-    return output;
-  };
-
-  // Return a completely flattened version of an array.
-  _.flatten = function(array, shallow) {
-    return flatten(array, shallow, []);
-  };
-
-  // Return a version of the array that does not contain the specified value(s).
-  _.without = function(array) {
-    return _.difference(array, slice.call(arguments, 1));
-  };
-
-  // Produce a duplicate-free version of the array. If the array has already
-  // been sorted, you have the option of using a faster algorithm.
-  // Aliased as `unique`.
-  _.uniq = _.unique = function(array, isSorted, iterator, context) {
-    if (_.isFunction(isSorted)) {
-      context = iterator;
-      iterator = isSorted;
-      isSorted = false;
-    }
-    var initial = iterator ? _.map(array, iterator, context) : array;
-    var results = [];
-    var seen = [];
-    each(initial, function(value, index) {
-      if (isSorted ? (!index || seen[seen.length - 1] !== value) : !_.contains(seen, value)) {
-        seen.push(value);
-        results.push(array[index]);
-      }
-    });
-    return results;
-  };
-
-  // Produce an array that contains the union: each distinct element from all of
-  // the passed-in arrays.
-  _.union = function() {
-    return _.uniq(concat.apply(ArrayProto, arguments));
-  };
-
-  // Produce an array that contains every item shared between all the
-  // passed-in arrays.
-  _.intersection = function(array) {
-    var rest = slice.call(arguments, 1);
-    return _.filter(_.uniq(array), function(item) {
-      return _.every(rest, function(other) {
-        return _.indexOf(other, item) >= 0;
-      });
-    });
-  };
-
-  // Take the difference between one array and a number of other arrays.
-  // Only the elements present in just the first array will remain.
-  _.difference = function(array) {
-    var rest = concat.apply(ArrayProto, slice.call(arguments, 1));
-    return _.filter(array, function(value){ return !_.contains(rest, value); });
-  };
-
-  // Zip together multiple lists into a single array -- elements that share
-  // an index go together.
-  _.zip = function() {
-    var args = slice.call(arguments);
-    var length = _.max(_.pluck(args, 'length'));
-    var results = new Array(length);
-    for (var i = 0; i < length; i++) {
-      results[i] = _.pluck(args, "" + i);
-    }
-    return results;
-  };
-
-  // Converts lists into objects. Pass either a single array of `[key, value]`
-  // pairs, or two parallel arrays of the same length -- one of keys, and one of
-  // the corresponding values.
-  _.object = function(list, values) {
-    if (list == null) return {};
-    var result = {};
-    for (var i = 0, l = list.length; i < l; i++) {
-      if (values) {
-        result[list[i]] = values[i];
-      } else {
-        result[list[i][0]] = list[i][1];
-      }
-    }
-    return result;
-  };
-
-  // If the browser doesn't supply us with indexOf (I'm looking at you, **MSIE**),
-  // we need this function. Return the position of the first occurrence of an
-  // item in an array, or -1 if the item is not included in the array.
-  // Delegates to **ECMAScript 5**'s native `indexOf` if available.
-  // If the array is large and already in sort order, pass `true`
-  // for **isSorted** to use binary search.
-  _.indexOf = function(array, item, isSorted) {
-    if (array == null) return -1;
-    var i = 0, l = array.length;
-    if (isSorted) {
-      if (typeof isSorted == 'number') {
-        i = (isSorted < 0 ? Math.max(0, l + isSorted) : isSorted);
-      } else {
-        i = _.sortedIndex(array, item);
-        return array[i] === item ? i : -1;
-      }
-    }
-    if (nativeIndexOf && array.indexOf === nativeIndexOf) return array.indexOf(item, isSorted);
-    for (; i < l; i++) if (array[i] === item) return i;
-    return -1;
-  };
-
-  // Delegates to **ECMAScript 5**'s native `lastIndexOf` if available.
-  _.lastIndexOf = function(array, item, from) {
-    if (array == null) return -1;
-    var hasIndex = from != null;
-    if (nativeLastIndexOf && array.lastIndexOf === nativeLastIndexOf) {
-      return hasIndex ? array.lastIndexOf(item, from) : array.lastIndexOf(item);
-    }
-    var i = (hasIndex ? from : array.length);
-    while (i--) if (array[i] === item) return i;
-    return -1;
-  };
-
-  // Generate an integer Array containing an arithmetic progression. A port of
-  // the native Python `range()` function. See
-  // [the Python documentation](http://docs.python.org/library/functions.html#range).
-  _.range = function(start, stop, step) {
-    if (arguments.length <= 1) {
-      stop = start || 0;
-      start = 0;
-    }
-    step = arguments[2] || 1;
-
-    var len = Math.max(Math.ceil((stop - start) / step), 0);
-    var idx = 0;
-    var range = new Array(len);
-
-    while(idx < len) {
-      range[idx++] = start;
-      start += step;
-    }
-
-    return range;
-  };
-
-  // Function (ahem) Functions
-  // ------------------
-
-  // Reusable constructor function for prototype setting.
-  var ctor = function(){};
-
-  // Create a function bound to a given object (assigning `this`, and arguments,
-  // optionally). Binding with arguments is also known as `curry`.
-  // Delegates to **ECMAScript 5**'s native `Function.bind` if available.
-  // We check for `func.bind` first, to fail fast when `func` is undefined.
-  _.bind = function(func, context) {
-    var args, bound;
-    if (func.bind === nativeBind && nativeBind) return nativeBind.apply(func, slice.call(arguments, 1));
-    if (!_.isFunction(func)) throw new TypeError;
-    args = slice.call(arguments, 2);
-    return bound = function() {
-      if (!(this instanceof bound)) return func.apply(context, args.concat(slice.call(arguments)));
-      ctor.prototype = func.prototype;
-      var self = new ctor;
-      ctor.prototype = null;
-      var result = func.apply(self, args.concat(slice.call(arguments)));
-      if (Object(result) === result) return result;
-      return self;
-    };
-  };
-
-  // Bind all of an object's methods to that object. Useful for ensuring that
-  // all callbacks defined on an object belong to it.
-  _.bindAll = function(obj) {
-    var funcs = slice.call(arguments, 1);
-    if (funcs.length == 0) funcs = _.functions(obj);
-    each(funcs, function(f) { obj[f] = _.bind(obj[f], obj); });
-    return obj;
-  };
-
-  // Memoize an expensive function by storing its results.
-  _.memoize = function(func, hasher) {
-    var memo = {};
-    hasher || (hasher = _.identity);
-    return function() {
-      var key = hasher.apply(this, arguments);
-      return _.has(memo, key) ? memo[key] : (memo[key] = func.apply(this, arguments));
-    };
-  };
-
-  // Delays a function for the given number of milliseconds, and then calls
-  // it with the arguments supplied.
-  _.delay = function(func, wait) {
-    var args = slice.call(arguments, 2);
-    return setTimeout(function(){ return func.apply(null, args); }, wait);
-  };
-
-  // Defers a function, scheduling it to run after the current call stack has
-  // cleared.
-  _.defer = function(func) {
-    return _.delay.apply(_, [func, 1].concat(slice.call(arguments, 1)));
-  };
-
-  // Returns a function, that, when invoked, will only be triggered at most once
-  // during a given window of time.
-  _.throttle = function(func, wait) {
-    var context, args, timeout, result;
-    var previous = 0;
-    var later = function() {
-      previous = new Date;
-      timeout = null;
-      result = func.apply(context, args);
-    };
-    return function() {
-      var now = new Date;
-      var remaining = wait - (now - previous);
-      context = this;
-      args = arguments;
-      if (remaining <= 0) {
-        clearTimeout(timeout);
-        timeout = null;
-        previous = now;
-        result = func.apply(context, args);
-      } else if (!timeout) {
-        timeout = setTimeout(later, remaining);
-      }
-      return result;
-    };
-  };
-
-  // Returns a function, that, as long as it continues to be invoked, will not
-  // be triggered. The function will be called after it stops being called for
-  // N milliseconds. If `immediate` is passed, trigger the function on the
-  // leading edge, instead of the trailing.
-  _.debounce = function(func, wait, immediate) {
-    var timeout, result;
-    return function() {
-      var context = this, args = arguments;
-      var later = function() {
-        timeout = null;
-        if (!immediate) result = func.apply(context, args);
-      };
-      var callNow = immediate && !timeout;
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-      if (callNow) result = func.apply(context, args);
-      return result;
-    };
-  };
-
-  // Returns a function that will be executed at most one time, no matter how
-  // often you call it. Useful for lazy initialization.
-  _.once = function(func) {
-    var ran = false, memo;
-    return function() {
-      if (ran) return memo;
-      ran = true;
-      memo = func.apply(this, arguments);
-      func = null;
-      return memo;
-    };
-  };
-
-  // Returns the first function passed as an argument to the second,
-  // allowing you to adjust arguments, run code before and after, and
-  // conditionally execute the original function.
-  _.wrap = function(func, wrapper) {
-    return function() {
-      var args = [func];
-      push.apply(args, arguments);
-      return wrapper.apply(this, args);
-    };
-  };
-
-  // Returns a function that is the composition of a list of functions, each
-  // consuming the return value of the function that follows.
-  _.compose = function() {
-    var funcs = arguments;
-    return function() {
-      var args = arguments;
-      for (var i = funcs.length - 1; i >= 0; i--) {
-        args = [funcs[i].apply(this, args)];
-      }
-      return args[0];
-    };
-  };
-
-  // Returns a function that will only be executed after being called N times.
-  _.after = function(times, func) {
-    if (times <= 0) return func();
-    return function() {
-      if (--times < 1) {
-        return func.apply(this, arguments);
-      }
-    };
-  };
-
-  // Object Functions
-  // ----------------
-
-  // Retrieve the names of an object's properties.
-  // Delegates to **ECMAScript 5**'s native `Object.keys`
-  _.keys = nativeKeys || function(obj) {
-    if (obj !== Object(obj)) throw new TypeError('Invalid object');
-    var keys = [];
-    for (var key in obj) if (_.has(obj, key)) keys[keys.length] = key;
-    return keys;
-  };
-
-  // Retrieve the values of an object's properties.
-  _.values = function(obj) {
-    var values = [];
-    for (var key in obj) if (_.has(obj, key)) values.push(obj[key]);
-    return values;
-  };
-
-  // Convert an object into a list of `[key, value]` pairs.
-  _.pairs = function(obj) {
-    var pairs = [];
-    for (var key in obj) if (_.has(obj, key)) pairs.push([key, obj[key]]);
-    return pairs;
-  };
-
-  // Invert the keys and values of an object. The values must be serializable.
-  _.invert = function(obj) {
-    var result = {};
-    for (var key in obj) if (_.has(obj, key)) result[obj[key]] = key;
-    return result;
-  };
-
-  // Return a sorted list of the function names available on the object.
-  // Aliased as `methods`
-  _.functions = _.methods = function(obj) {
-    var names = [];
-    for (var key in obj) {
-      if (_.isFunction(obj[key])) names.push(key);
-    }
-    return names.sort();
-  };
-
-  // Extend a given object with all the properties in passed-in object(s).
-  _.extend = function(obj) {
-    each(slice.call(arguments, 1), function(source) {
-      if (source) {
-        for (var prop in source) {
-          obj[prop] = source[prop];
-        }
-      }
-    });
-    return obj;
-  };
-
-  // Return a copy of the object only containing the whitelisted properties.
-  _.pick = function(obj) {
-    var copy = {};
-    var keys = concat.apply(ArrayProto, slice.call(arguments, 1));
-    each(keys, function(key) {
-      if (key in obj) copy[key] = obj[key];
-    });
-    return copy;
-  };
-
-   // Return a copy of the object without the blacklisted properties.
-  _.omit = function(obj) {
-    var copy = {};
-    var keys = concat.apply(ArrayProto, slice.call(arguments, 1));
-    for (var key in obj) {
-      if (!_.contains(keys, key)) copy[key] = obj[key];
-    }
-    return copy;
-  };
-
-  // Fill in a given object with default properties.
-  _.defaults = function(obj) {
-    each(slice.call(arguments, 1), function(source) {
-      if (source) {
-        for (var prop in source) {
-          if (obj[prop] == null) obj[prop] = source[prop];
-        }
-      }
-    });
-    return obj;
-  };
-
-  // Create a (shallow-cloned) duplicate of an object.
-  _.clone = function(obj) {
-    if (!_.isObject(obj)) return obj;
-    return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
-  };
-
-  // Invokes interceptor with the obj, and then returns obj.
-  // The primary purpose of this method is to "tap into" a method chain, in
-  // order to perform operations on intermediate results within the chain.
-  _.tap = function(obj, interceptor) {
-    interceptor(obj);
-    return obj;
-  };
-
-  // Internal recursive comparison function for `isEqual`.
-  var eq = function(a, b, aStack, bStack) {
-    // Identical objects are equal. `0 === -0`, but they aren't identical.
-    // See the Harmony `egal` proposal: http://wiki.ecmascript.org/doku.php?id=harmony:egal.
-    if (a === b) return a !== 0 || 1 / a == 1 / b;
-    // A strict comparison is necessary because `null == undefined`.
-    if (a == null || b == null) return a === b;
-    // Unwrap any wrapped objects.
-    if (a instanceof _) a = a._wrapped;
-    if (b instanceof _) b = b._wrapped;
-    // Compare `[[Class]]` names.
-    var className = toString.call(a);
-    if (className != toString.call(b)) return false;
-    switch (className) {
-      // Strings, numbers, dates, and booleans are compared by value.
-      case '[object String]':
-        // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
-        // equivalent to `new String("5")`.
-        return a == String(b);
-      case '[object Number]':
-        // `NaN`s are equivalent, but non-reflexive. An `egal` comparison is performed for
-        // other numeric values.
-        return a != +a ? b != +b : (a == 0 ? 1 / a == 1 / b : a == +b);
-      case '[object Date]':
-      case '[object Boolean]':
-        // Coerce dates and booleans to numeric primitive values. Dates are compared by their
-        // millisecond representations. Note that invalid dates with millisecond representations
-        // of `NaN` are not equivalent.
-        return +a == +b;
-      // RegExps are compared by their source patterns and flags.
-      case '[object RegExp]':
-        return a.source == b.source &&
-               a.global == b.global &&
-               a.multiline == b.multiline &&
-               a.ignoreCase == b.ignoreCase;
-    }
-    if (typeof a != 'object' || typeof b != 'object') return false;
-    // Assume equality for cyclic structures. The algorithm for detecting cyclic
-    // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
-    var length = aStack.length;
-    while (length--) {
-      // Linear search. Performance is inversely proportional to the number of
-      // unique nested structures.
-      if (aStack[length] == a) return bStack[length] == b;
-    }
-    // Add the first object to the stack of traversed objects.
-    aStack.push(a);
-    bStack.push(b);
-    var size = 0, result = true;
-    // Recursively compare objects and arrays.
-    if (className == '[object Array]') {
-      // Compare array lengths to determine if a deep comparison is necessary.
-      size = a.length;
-      result = size == b.length;
-      if (result) {
-        // Deep compare the contents, ignoring non-numeric properties.
-        while (size--) {
-          if (!(result = eq(a[size], b[size], aStack, bStack))) break;
-        }
-      }
-    } else {
-      // Objects with different constructors are not equivalent, but `Object`s
-      // from different frames are.
-      var aCtor = a.constructor, bCtor = b.constructor;
-      if (aCtor !== bCtor && !(_.isFunction(aCtor) && (aCtor instanceof aCtor) &&
-                               _.isFunction(bCtor) && (bCtor instanceof bCtor))) {
-        return false;
-      }
-      // Deep compare objects.
-      for (var key in a) {
-        if (_.has(a, key)) {
-          // Count the expected number of properties.
-          size++;
-          // Deep compare each member.
-          if (!(result = _.has(b, key) && eq(a[key], b[key], aStack, bStack))) break;
-        }
-      }
-      // Ensure that both objects contain the same number of properties.
-      if (result) {
-        for (key in b) {
-          if (_.has(b, key) && !(size--)) break;
-        }
-        result = !size;
-      }
-    }
-    // Remove the first object from the stack of traversed objects.
-    aStack.pop();
-    bStack.pop();
-    return result;
-  };
-
-  // Perform a deep comparison to check if two objects are equal.
-  _.isEqual = function(a, b) {
-    return eq(a, b, [], []);
-  };
-
-  // Is a given array, string, or object empty?
-  // An "empty" object has no enumerable own-properties.
-  _.isEmpty = function(obj) {
-    if (obj == null) return true;
-    if (_.isArray(obj) || _.isString(obj)) return obj.length === 0;
-    for (var key in obj) if (_.has(obj, key)) return false;
-    return true;
-  };
-
-  // Is a given value a DOM element?
-  _.isElement = function(obj) {
-    return !!(obj && obj.nodeType === 1);
-  };
-
-  // Is a given value an array?
-  // Delegates to ECMA5's native Array.isArray
-  _.isArray = nativeIsArray || function(obj) {
-    return toString.call(obj) == '[object Array]';
-  };
-
-  // Is a given variable an object?
-  _.isObject = function(obj) {
-    return obj === Object(obj);
-  };
-
-  // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp.
-  each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function(name) {
-    _['is' + name] = function(obj) {
-      return toString.call(obj) == '[object ' + name + ']';
-    };
-  });
-
-  // Define a fallback version of the method in browsers (ahem, IE), where
-  // there isn't any inspectable "Arguments" type.
-  if (!_.isArguments(arguments)) {
-    _.isArguments = function(obj) {
-      return !!(obj && _.has(obj, 'callee'));
-    };
-  }
-
-  // Optimize `isFunction` if appropriate.
-  if (typeof (/./) !== 'function') {
-    _.isFunction = function(obj) {
-      return typeof obj === 'function';
-    };
-  }
-
-  // Is a given object a finite number?
-  _.isFinite = function(obj) {
-    return isFinite(obj) && !isNaN(parseFloat(obj));
-  };
-
-  // Is the given value `NaN`? (NaN is the only number which does not equal itself).
-  _.isNaN = function(obj) {
-    return _.isNumber(obj) && obj != +obj;
-  };
-
-  // Is a given value a boolean?
-  _.isBoolean = function(obj) {
-    return obj === true || obj === false || toString.call(obj) == '[object Boolean]';
-  };
-
-  // Is a given value equal to null?
-  _.isNull = function(obj) {
-    return obj === null;
-  };
-
-  // Is a given variable undefined?
-  _.isUndefined = function(obj) {
-    return obj === void 0;
-  };
-
-  // Shortcut function for checking if an object has a given property directly
-  // on itself (in other words, not on a prototype).
-  _.has = function(obj, key) {
-    return hasOwnProperty.call(obj, key);
-  };
-
-  // Utility Functions
-  // -----------------
-
-  // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
-  // previous owner. Returns a reference to the Underscore object.
-  _.noConflict = function() {
-    root._ = previousUnderscore;
-    return this;
-  };
-
-  // Keep the identity function around for default iterators.
-  _.identity = function(value) {
-    return value;
-  };
-
-  // Run a function **n** times.
-  _.times = function(n, iterator, context) {
-    var accum = Array(n);
-    for (var i = 0; i < n; i++) accum[i] = iterator.call(context, i);
-    return accum;
-  };
-
-  // Return a random integer between min and max (inclusive).
-  _.random = function(min, max) {
-    if (max == null) {
-      max = min;
-      min = 0;
-    }
-    return min + (0 | Math.random() * (max - min + 1));
-  };
-
-  // List of HTML entities for escaping.
-  var entityMap = {
-    escape: {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#x27;',
-      '/': '&#x2F;'
-    }
-  };
-  entityMap.unescape = _.invert(entityMap.escape);
-
-  // Regexes containing the keys and values listed immediately above.
-  var entityRegexes = {
-    escape:   new RegExp('[' + _.keys(entityMap.escape).join('') + ']', 'g'),
-    unescape: new RegExp('(' + _.keys(entityMap.unescape).join('|') + ')', 'g')
-  };
-
-  // Functions for escaping and unescaping strings to/from HTML interpolation.
-  _.each(['escape', 'unescape'], function(method) {
-    _[method] = function(string) {
-      if (string == null) return '';
-      return ('' + string).replace(entityRegexes[method], function(match) {
-        return entityMap[method][match];
-      });
-    };
-  });
-
-  // If the value of the named property is a function then invoke it;
-  // otherwise, return it.
-  _.result = function(object, property) {
-    if (object == null) return null;
-    var value = object[property];
-    return _.isFunction(value) ? value.call(object) : value;
-  };
-
-  // Add your own custom functions to the Underscore object.
-  _.mixin = function(obj) {
-    each(_.functions(obj), function(name){
-      var func = _[name] = obj[name];
-      _.prototype[name] = function() {
-        var args = [this._wrapped];
-        push.apply(args, arguments);
-        return result.call(this, func.apply(_, args));
-      };
-    });
-  };
-
-  // Generate a unique integer id (unique within the entire client session).
-  // Useful for temporary DOM ids.
-  var idCounter = 0;
-  _.uniqueId = function(prefix) {
-    var id = '' + ++idCounter;
-    return prefix ? prefix + id : id;
-  };
-
-  // By default, Underscore uses ERB-style template delimiters, change the
-  // following template settings to use alternative delimiters.
-  _.templateSettings = {
-    evaluate    : /<%([\s\S]+?)%>/g,
-    interpolate : /<%=([\s\S]+?)%>/g,
-    escape      : /<%-([\s\S]+?)%>/g
-  };
-
-  // When customizing `templateSettings`, if you don't want to define an
-  // interpolation, evaluation or escaping regex, we need one that is
-  // guaranteed not to match.
-  var noMatch = /(.)^/;
-
-  // Certain characters need to be escaped so that they can be put into a
-  // string literal.
-  var escapes = {
-    "'":      "'",
-    '\\':     '\\',
-    '\r':     'r',
-    '\n':     'n',
-    '\t':     't',
-    '\u2028': 'u2028',
-    '\u2029': 'u2029'
-  };
-
-  var escaper = /\\|'|\r|\n|\t|\u2028|\u2029/g;
-
-  // JavaScript micro-templating, similar to John Resig's implementation.
-  // Underscore templating handles arbitrary delimiters, preserves whitespace,
-  // and correctly escapes quotes within interpolated code.
-  _.template = function(text, data, settings) {
-    settings = _.defaults({}, settings, _.templateSettings);
-
-    // Combine delimiters into one regular expression via alternation.
-    var matcher = new RegExp([
-      (settings.escape || noMatch).source,
-      (settings.interpolate || noMatch).source,
-      (settings.evaluate || noMatch).source
-    ].join('|') + '|$', 'g');
-
-    // Compile the template source, escaping string literals appropriately.
-    var index = 0;
-    var source = "__p+='";
-    text.replace(matcher, function(match, escape, interpolate, evaluate, offset) {
-      source += text.slice(index, offset)
-        .replace(escaper, function(match) { return '\\' + escapes[match]; });
-
-      if (escape) {
-        source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
-      }
-      if (interpolate) {
-        source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
-      }
-      if (evaluate) {
-        source += "';\n" + evaluate + "\n__p+='";
-      }
-      index = offset + match.length;
-      return match;
-    });
-    source += "';\n";
-
-    // If a variable is not specified, place data values in local scope.
-    if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
-
-    source = "var __t,__p='',__j=Array.prototype.join," +
-      "print=function(){__p+=__j.call(arguments,'');};\n" +
-      source + "return __p;\n";
-
-    try {
-      var render = new Function(settings.variable || 'obj', '_', source);
-    } catch (e) {
-      e.source = source;
-      throw e;
-    }
-
-    if (data) return render(data, _);
-    var template = function(data) {
-      return render.call(this, data, _);
-    };
-
-    // Provide the compiled function source as a convenience for precompilation.
-    template.source = 'function(' + (settings.variable || 'obj') + '){\n' + source + '}';
-
-    return template;
-  };
-
-  // Add a "chain" function, which will delegate to the wrapper.
-  _.chain = function(obj) {
-    return _(obj).chain();
-  };
-
-  // OOP
-  // ---------------
-  // If Underscore is called as a function, it returns a wrapped object that
-  // can be used OO-style. This wrapper holds altered versions of all the
-  // underscore functions. Wrapped objects may be chained.
-
-  // Helper function to continue chaining intermediate results.
-  var result = function(obj) {
-    return this._chain ? _(obj).chain() : obj;
-  };
-
-  // Add all of the Underscore functions to the wrapper object.
-  _.mixin(_);
-
-  // Add all mutator Array functions to the wrapper.
-  each(['pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'], function(name) {
-    var method = ArrayProto[name];
-    _.prototype[name] = function() {
-      var obj = this._wrapped;
-      method.apply(obj, arguments);
-      if ((name == 'shift' || name == 'splice') && obj.length === 0) delete obj[0];
-      return result.call(this, obj);
-    };
-  });
-
-  // Add all accessor Array functions to the wrapper.
-  each(['concat', 'join', 'slice'], function(name) {
-    var method = ArrayProto[name];
-    _.prototype[name] = function() {
-      return result.call(this, method.apply(this._wrapped, arguments));
-    };
-  });
-
-  _.extend(_.prototype, {
-
-    // Start chaining a wrapped Underscore object.
-    chain: function() {
-      this._chain = true;
-      return this;
-    },
-
-    // Extracts the result from a wrapped and chained object.
-    value: function() {
-      return this._wrapped;
-    }
-
-  });
 
 }).call(this);
 
@@ -5447,6 +4190,15 @@ function isPromise(object) {
 }
 
 /**
+ * @returns whether the given object can be coerced to a promise.
+ * Otherwise it is a fulfilled value.
+ */
+exports.isPromiseAlike = isPromiseAlike;
+function isPromiseAlike(object) {
+    return object && typeof object.then === "function";
+}
+
+/**
  * @returns whether the given object is a resolved promise.
  */
 exports.isResolved = isResolved;
@@ -5460,7 +4212,7 @@ function isResolved(object) {
  */
 exports.isFulfilled = isFulfilled;
 function isFulfilled(object) {
-    return !isPromise(valueOf(object));
+    return !isPromiseAlike(valueOf(object));
 }
 
 /**
@@ -5497,7 +4249,6 @@ function displayErrors() {
  */
 exports.reject = reject;
 function reject(exception) {
-    exception = exception || new Error();
     var rejection = makePromise({
         "when": function (rejected) {
             // note that the error has been handled
@@ -5546,7 +4297,7 @@ function resolve(object) {
     // implementations on primordial prototypes are harmless.
     object = valueOf(object);
     // assimilate thenables, CommonJS/Promises/A
-    if (object && typeof object.then === "function") {
+    if (isPromiseAlike(object)) {
         var deferred = defer();
         object.then(deferred.resolve, deferred.reject, deferred.notify);
         return deferred.promise;
@@ -5689,14 +4440,14 @@ function when(value, fulfilled, rejected, progressed) {
 
     function _fulfilled(value) {
         try {
-            return fulfilled ? fulfilled(value) : value;
+            return typeof fulfilled === "function" ? fulfilled(value) : value;
         } catch (exception) {
             return reject(exception);
         }
     }
 
     function _rejected(exception) {
-        if (rejected) {
+        if (typeof rejected === "function") {
             makeStackTraceLong(exception, resolvedValue);
             try {
                 return rejected(exception);
@@ -5708,7 +4459,7 @@ function when(value, fulfilled, rejected, progressed) {
     }
 
     function _progressed(value) {
-        return progressed ? progressed(value) : value;
+        return typeof progressed === "function" ? progressed(value) : value;
     }
 
     var resolvedValue = resolve(value);
@@ -6250,8 +5001,7 @@ function delay(promise, timeout) {
  * Passes a continuation to a Node function, which is called with the given
  * arguments provided as an array, and returns a promise.
  *
- *      var readFile = require("fs").readFile;
- *      Q.nfapply(readFile, [__filename])
+ *      Q.nfapply(FS.readFile, [__filename])
  *      .then(function (content) {
  *      })
  *
@@ -6270,8 +5020,7 @@ function nfapply(callback, args) {
  * Passes a continuation to a Node function, which is called with the given
  * arguments provided individually, and returns a promise.
  *
- *      var readFile = require("fs").readFile;
- *      Q.nfcall(readFile, __filename)
+ *      Q.nfcall(FS.readFile, __filename)
  *      .then(function (content) {
  *      })
  *
@@ -6312,7 +5061,6 @@ function nfbind(callback/*, ...args */) {
  * Passes a continuation to a Node function, which is called with a given
  * `this` value and arguments provided as an array, and returns a promise.
  *
- *      var FS = (require)("fs");
  *      Q.napply(FS.readFile, FS, [__filename])
  *      .then(function (content) {
  *      })
@@ -6327,7 +5075,6 @@ function napply(callback, thisp, args) {
  * Passes a continuation to a Node function, which is called with a given
  * `this` value and arguments provided individually, and returns a promise.
  *
- *      var FS = (require)("fs");
  *      Q.ncall(FS.readFile, FS, __filename)
  *      .then(function (content) {
  *      })
@@ -6835,9 +5582,12 @@ var Level = Sandbox.extend({
     var confirmDefer = Q.defer();
     var confirmView = new ConfirmCancelTerminal({
       markdowns: [
-        '## Are you sure you want to see the solution?',
+        // '## Are you sure you want to see the solution?',
+        // '',
+        // 'I believe in you! You can do it'
+        '## 정말 해답을 보시겠어요?',
         '',
-        'I believe in you! You can do it'
+        '당신도 해내실 수 있다고 믿습니다!'
       ],
       deferred: confirmDefer
     });
@@ -6845,7 +5595,8 @@ var Level = Sandbox.extend({
     confirmDefer.promise
     .then(issueFunc)
     .fail(function() {
-      command.setResult("Great! I'll let you get back to it");
+      // command.setResult("Great! I'll let you get back to it");
+      command.setResult("그렇죠! 계속해봅시다");
     })
     .done(function() {
      // either way we animate, so both options can share this logic
@@ -6956,8 +5707,10 @@ var Level = Sandbox.extend({
   afterCommandDefer: function(defer, command) {
     if (this.solved) {
       command.addWarning(
-        "You've already solved this level, try other levels with 'show levels'" +
-        "or go back to the sandbox with 'sandbox'"
+        // "You've already solved this level, try other levels with 'show levels'" +
+        // "or go back to the sandbox with 'sandbox'"
+        "이미 이 레벨을 해결하셨습니다. 'show levels'를 입력해서 다른 레벨에 도전해보시거나," +
+        "'sandbox'라고 쳐서 연습 화면으로 돌아가보세요"
       );
       defer.resolve();
       return;
@@ -7065,7 +5818,8 @@ var Level = Sandbox.extend({
   getInstantCommands: function() {
     var hintMsg = (this.level.hint) ?
       this.level.hint :
-      "Hmm, there doesn't seem to be a hint for this level :-/";
+      // "Hmm, there doesn't seem to be a hint for this level :-/";
+      "흠, 이번 레벨에는 힌트가 없군요 -_-;";
 
     return [
       [/^help$|^\?$/, function() {
@@ -7815,19 +6569,22 @@ GitEngine.prototype.validateBranchName = function(name) {
   name = name.replace(/\s/g, '');
   if (!/^[a-zA-Z0-9]+$/.test(name)) {
     throw new GitError({
-      msg: 'woah bad branch name!! This is not ok: ' + name
+      // msg: 'woah bad branch name!! This is not ok: ' + name
+      msg: '브랜치명으로 쓸 수 없습니다: ' + name
     });
   }
   if (/[hH][eE][aA][dD]/.test(name)) {
     throw new GitError({
-      msg: 'branch name of "head" is ambiguous, dont name it that'
+      // msg: 'branch name of "head" is ambiguous, dont name it that'
+      msg: '"head"라는 브랜치 이름은 불분명합니다. 그렇게 이름짓지 맙시다'
     });
   }
   if (name.length > 9) {
     name = name.slice(0, 9);
     this.command.addWarning(
-      'Sorry, we need to keep branch names short for the visuals. Your branch ' +
-      'name was truncated to 9 characters, resulting in ' + name
+      // 'Sorry, we need to keep branch names short for the visuals. Your branch ' +
+      // 'name was truncated to 9 characters, resulting in ' + name
+      '화면에 보이기 좋게 하기 위해 브랜치이름을 짧게 하고 있어요. 지정하신 브랜치명을 9글자로 줄여서 쓰겠습니다: ' + name
     );
   }
   return name;
@@ -7837,7 +6594,8 @@ GitEngine.prototype.makeBranch = function(id, target) {
   id = this.validateBranchName(id);
   if (this.refs[id]) {
     throw new GitError({
-      msg: 'that branch id either matches a commit hash or already exists!'
+      // msg: 'that branch id either matches a commit hash or already exists!'
+      msg: '그 브랜치 이름이 이미 있거나, 커밋 해쉬와 겹칩니다!'
     });
   }
 
@@ -7916,7 +6674,8 @@ GitEngine.prototype.makeCommit = function(parents, id, options) {
 GitEngine.prototype.acceptNoGeneralArgs = function() {
   if (this.generalArgs.length) {
     throw new GitError({
-      msg: "That command accepts no general arguments"
+      // msg: "That command accepts no general arguments"
+      msg: "입력하신 명령어는 파라미터를 받지 않습니다."
     });
   }
 };
@@ -10128,8 +8887,8 @@ var ConfirmCancelView = ResolveRejectBase.extend({
     this.destination = options.destination;
     this.deferred = options.deferred || Q.defer();
     this.JSON = {
-      confirm: options.confirm || 'Confirm',
-      cancel: options.cancel || 'Cancel'
+      confirm: options.confirm || '확인',//'Confirm',
+      cancel: options.cancel || '취소'//'Cancel'
     };
 
     this.render();
@@ -10326,7 +9085,8 @@ var ModalAlert = ContainedBase.extend({
     }
 
     this.container = new ModalTerminal({
-      title: 'Alert!'
+      // title: 'Alert!'
+      title: '안내'
     });
     this.render();
 
@@ -10425,33 +9185,48 @@ var NextLevelConfirm = ConfirmCancelTerminal.extend({
     var pluralNumCommands = (options.numCommands == 1) ? '' : 's';
     var pluralBest = (options.best == 1) ? '' : 's';
 
+    // var markdowns = [
+    //   '## Great Job!!',
+    //   '',
+    //   'You solved the level in **' + options.numCommands + '** command' + pluralNumCommands + '; ',
+    //   'our solution uses ' + options.best + '. '
+    // ];
     var markdowns = [
-      '## Great Job!!',
+      '## 훌륭합니다!',
       '',
-      'You solved the level in **' + options.numCommands + '** command' + pluralNumCommands + '; ',
-      'our solution uses ' + options.best + '. '
+      '이 레벨을 **' + options.numCommands + '**개의 커맨드로 통과하셨습니다. ',
+      '모범답안은 ' + options.best + '개의 커맨드를 씁니다. '
     ];
 
     if (options.numCommands <= options.best) {
       markdowns.push(
-        'Awesome! You matched or exceeded our solution. '
+        // 'Awesome! You matched or exceeded our solution. '
+        '대단해요! 모범 답안의 수준이거나 더 뛰어납니다.'
       );
     } else {
       markdowns.push(
-        'See if you can whittle it down to ' + options.best + ' command' + pluralBest + ' :D '
+        // 'See if you can whittle it down to ' + options.best + ' command' + pluralBest + ' :D '
+        options.best + '개 이하의 커맨드로 푸실 수 있는지 도전해보세요 ^^;'
       );
     }
 
     if (options.nextLevel) {
+      // markdowns = markdowns.concat([
+      //   '',
+      //   'Would you like to move onto "' +
+      //   nextLevelName + '", the next level?'
+      // ]);
       markdowns = markdowns.concat([
         '',
-        'Would you like to move onto "' +
-        nextLevelName + '", the next level?'
+        '다음 레벨 "' +
+        nextLevelName + '" 로 넘어갈까요?'
       ]);
+
     } else {
       markdowns = markdowns.concat([
         '',
-        'Wow!!! You finished the last level, congratulations!'
+        // 'Wow!!! You finished the last level, congratulations!'
+        '오!!! 마지막 레벨도 끝내셨어요, 축하드립니다!'
       ]);
     }
 
@@ -10586,8 +9361,8 @@ var CanvasTerminalHolder = BaseView.extend({
     options = options || {};
     this.destination = $('body');
     this.JSON = {
-      title: options.title || 'Goal To Reach',
-      text: options.text || 'You can hide this window with "hide goal"'
+      title: options.title || '목표 결과', //'Goal To Reach',
+      text: options.text || '이 창을 닫으시려면 "hide goal"이라고 입력하세요'//'You can hide this window with "hide goal"'
     };
 
     this.render();
@@ -12983,7 +11758,8 @@ var Command = Backbone.Model.extend({
 
     // if we reach here, this command is not supported :-/
     this.set('error', new CommandProcessError({
-        msg: 'The command "' + this.get('rawStr') + '" isn\'t supported, sorry!'
+        // msg: 'The command "' + this.get('rawStr') + '" isn\'t supported, sorry!'
+        msg: '명령어 "' + this.get('rawStr') + '"는 지원되지 않습니다. 죄송!'
       })
     );
   },
@@ -13074,10 +11850,12 @@ var instantCommands = [
     var lines = [
       'Git Version PCOTTLE.1.0',
       '<br/>',
-      'Usage:',
+      // 'Usage:',
+      '사용법:',
       _.escape('\t git <command> [<args>]'),
       '<br/>',
-      'Supported commands:',
+      // 'Supported commands:',
+      '지원하는 명령어:',
       '<br/>'
     ];
     var commands = GitOptionParser.prototype.getMasterOptionMap();
@@ -13212,7 +11990,8 @@ GitOptionParser.prototype.explodeAndSet = function() {
       // it's an option, check supportedMap
       if (this.supportedMap[part] === undefined) {
         throw new CommandProcessError({
-          msg: 'The option "' + part + '" is not supported'
+          // msg: 'The option "' + part + '" is not supported'
+          msg: '옵션 "' +  part + '"는 지원하지 않습니다'
         });
       }
 
@@ -13390,7 +12169,8 @@ var instantCommands = [
 
     events.trigger('refreshTree');
     throw new CommandResult({
-      msg: "Refreshing tree..."
+      // msg: "Refreshing tree..."
+      msg: "트리 초기화..."
     });
   }],
   [/^rollup (\d+)$/, function(bits) {
@@ -14146,7 +12926,7 @@ var GitDemonstrationView = ContainedBase.extend({
     this.JSON.afterHTML = convert(this.JSON.afterMarkdowns);
 
     this.container = new ModalTerminal({
-      title: options.title || 'Git Demonstration'
+      title: options.title || 'Git 데모'//'Git Demonstration'
     });
     this.render();
     this.checkScroll();
@@ -15077,7 +13857,8 @@ GitVisuals.prototype.finishAnimation = function() {
   var defaultTime = GRAPHICS.defaultAnimationTime;
   var nodeRadius = GRAPHICS.nodeRadius;
 
-  var textString = 'Solved!!\n:D';
+  // var textString = 'Solved!!\n:D';
+  var textString = '정답!!\n^_^';
   var text = null;
   var makeText = _.bind(function() {
     text = this.paper.text(
@@ -16885,8 +15666,8 @@ var Backbone = require('backbone');
 
 // Each level is part of a "sequence;" levels within
 // a sequence proceed in order.
-var levelSequences = require('../levels').levelSequences;
-var sequenceInfo = require('../levels').sequenceInfo;
+var levelSequences = require('../../levels').levelSequences;
+var sequenceInfo = require('../../levels').sequenceInfo;
 
 var Main = require('../app');
 
@@ -17051,48 +15832,52 @@ require.define("/src/levels/index.js",function(require,module,exports,__dirname,
 // a sequence proceed in the order listed here
 exports.levelSequences = {
   intro: [
-    require('../../levels/intro/1').level,
-    require('../../levels/intro/2').level,
-    require('../../levels/intro/3').level,
-    require('../../levels/intro/4').level,
-    require('../../levels/intro/5').level
+    require('../levels/intro/1').level,
+    require('../levels/intro/2').level,
+    require('../levels/intro/3').level,
+    require('../levels/intro/4').level,
+    require('../levels/intro/5').level
   ],
   rebase: [
-    require('../../levels/rebase/1').level,
-    require('../../levels/rebase/2').level
+    require('../levels/rebase/1').level,
+    require('../levels/rebase/2').level
   ],
   mixed: [
-    require('../../levels/mixed/1').level,
-    require('../../levels/mixed/2').level,
-    require('../../levels/mixed/3').level
+    require('../levels/mixed/1').level,
+    require('../levels/mixed/2').level,
+    require('../levels/mixed/3').level
   ]
 };
 
 // there are also cute names and such for sequences
 exports.sequenceInfo = {
   intro: {
-    displayName: 'Introduction Sequence',
-    about: 'A nicely paced introduction to the majority of git commands'
+    // displayName: 'Introduction Sequence',
+    // about: 'A nicely paced introduction to the majority of git commands'
+    displayName: '기본 명령어',
+    about: '브랜치 관련 주요 git 명령어를 깔끔하게 알려드립니다'
   },
   rebase: {
-    displayName: 'Master the Rebase Luke!',
-    about: 'What is this whole rebase hotness everyone is talking about? Find out!'
+    // displayName: 'Master the Rebase Luke!',
+    // about: 'What is this whole rebase hotness everyone is talking about? Find out!'
+    displayName: '리베이스 완전정복!',
+    about: '그 좋다고들 말하는 rebase에 대해 알아봅시다!'
   },
   mixed: {
-    displayName: 'A Mixed Bag',
-    about: 'A mixed bag of Git techniques, tricks, and tips'
+    // displayName: 'A Mixed Bag',
+    // about: 'A mixed bag of Git techniques, tricks, and tips'
+    displayName: '종합선물세트 (아직 영문)',
+    about: 'Git을 다루는 다양한 팁과 테크닉을 다양하게 알아봅니다'
   }
 };
-
-
 });
 
 require.define("/src/levels/intro/1.js",function(require,module,exports,__dirname,__filename,process,global){exports.level = {
-  "name": 'Introduction to Git Commits',
+  "name": 'Git 커밋 소개',
   "goalTreeString": "{\"branches\":{\"master\":{\"target\":\"C3\",\"id\":\"master\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C2\"],\"id\":\"C3\"}},\"HEAD\":{\"target\":\"master\",\"id\":\"HEAD\"}}",
   "solutionCommand": "git commit;git commit",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"}},\"HEAD\":{\"target\":\"master\",\"id\":\"HEAD\"}}",
-  "hint": "Just type in 'git commit' twice to finish!",
+  "hint": "'git commit'이라고 두 번 치세요!",
   "disabledMap" : {
     "git revert": true
   },
@@ -17102,18 +15887,22 @@ require.define("/src/levels/intro/1.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Git Commits",
-            "A commit in a git repository records a snapshot of all the files in your directory. It\'s like a giant copy and paste, but even better!",
+            "## Git 커밋",
+            // "A commit in a git repository records a snapshot of all the files in your directory. It\'s like a giant copy and paste, but even better!",
+            "커밋은 Git 저장소에 여러분의 디렉토리에 있는 모든 파일에 대한 스냅샷을 기록하는 것입니다. 디렉토리 전체에 대한 복사해 붙이기와 비슷하지만 훨씬 유용합니다!",
             "",
-            "Git wants to keep commits as lightweight as possible though, so it doesn't just copy the entire directory every time you commit. It actually stores each commit as a set of changes, or a \"delta\", from one version of the repository to the next. That\'s why most commits have a parent commit above them -- you\'ll see this later in our visualizations.",
+            // "Git wants to keep commits as lightweight as possible though, so it doesn't just copy the entire directory every time you commit. It actually stores each commit as a set of changes, or a \"delta\", from one version of the repository to the next. That\'s why most commits have a parent commit above them -- you\'ll see this later in our visualizations.",
+            "Git은 커밋을 가능한한 가볍게 유지하고자 해서, 커밋할 때마다 디렉토리 전체를 복사하는 일은 하지 않습니다. 각 커밋은 저장소의 이전 버전과 다음 버전의 변경내역(\"delta\"라고도 함)을 저장합니다. 그래서 대부분의 커밋이 그 커밋 위에 부모 커밋을 가리키고 있게 되는 것입니다. -- 곧 그림으로 된 화면에서 살펴보게 될 것입니다.",
             "",
-            "In order to clone a repository, you have to unpack or \"resolve\" all these deltas. That's why you might see the command line output:",
+            //"In order to clone a repository, you have to unpack or \"resolve\" all these deltas. That's why you might see the command line output:",
+            "저장소를 복제(clone)하려면, 그 모든 변경분(delta)를 풀어내야하는데, 그 때문에 명령행 결과로 아래와 같이 보게됩니다. ",
             "",
             "`resolving deltas`",
             "",
-            "when cloning a repo.",
-            "",
-            "It's a lot to take in, but for now you can think of commits as snapshots of the project. Commits are very light and switching between them is wicked fast!"
+            //"when cloning a repo.",
+            //"",
+            //"It's a lot to take in, but for now you can think of commits as snapshots of the project. Commits are very light and switching between them is wicked fast!"
+            "알아야할 것이 꽤 많습니다만, 일단은 커밋을 프로젝트의 각각의 스냅샷들로 생각하시는 걸로 충분합니다. 커밋은 매우 가볍고 커밋 사이의 전환도 매우 빠르다는 것을 기억해주세요!"
           ]
         }
       },
@@ -17121,12 +15910,15 @@ require.define("/src/levels/intro/1.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Let's see what this looks like in practice. On the right we have a visualization of a (small) git repository. There are two commits right now -- the first initial commit, `C0`, and one commit after that `C1` that might have some meaningful changes.",
+            // "Let's see what this looks like in practice. On the right we have a visualization of a (small) git repository. There are two commits right now -- the first initial commit, `C0`, and one commit after that `C1` that might have some meaningful changes.",
+            "연습할 때 어떻게 보이는지 확인해보죠. 오른쪽 화면에 git 저장소를 그림으로 표현해 놓았습니다. 현재 두번 커밋한 상태입니다 -- 첫번째 커밋으로 `C0`, 그 다음으로 `C1`이라는 어떤 의마있는 변화가 있는 커밋이 있습니다.",
             "",
-            "Hit the button below to make a new commit"
+            // "Hit the button below to make a new commit"
+            "아래 버튼을 눌러 새로운 커밋을 만들어보세요"
           ],
           "afterMarkdowns": [
-            "There we go! Awesome. We just made changes to the repository and saved them as a commit. The commit we just made has a parent, `C1`, which references which commit it was based off of."
+            // "There we go! Awesome. We just made changes to the repository and saved them as a commit. The commit we just made has a parent, `C1`, which references which commit it was based off of."
+            "이렇게 보입니다! 멋지죠. 우리는 방금 저장소 내용을 변경해서 한번의 커밋으로 저장했습니다. 방금 만든 커밋은 부모는 `C1`이고, 어떤 커밋을 기반으로 변경된 것인지를 가리킵니다."
           ],
           "command": "git commit",
           "beforeCommand": ""
@@ -17136,7 +15928,8 @@ require.define("/src/levels/intro/1.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "Go ahead and try it out on your own! After this window closes, make two commits to complete the level"
+            // "Go ahead and try it out on your own! After this window closes, make two commits to complete the level"
+            "계속해서 직접 한번 해보세요! 이 창을 닫고, 커밋을 두 번 하면 다음 레벨로 넘어갑니다"
           ]
         }
       }
@@ -17149,8 +15942,9 @@ require.define("/src/levels/intro/1.js",function(require,module,exports,__dirnam
 require.define("/src/levels/intro/2.js",function(require,module,exports,__dirname,__filename,process,global){exports.level = {
   "goalTreeString": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"},\"bugFix\":{\"target\":\"C1\",\"id\":\"bugFix\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"}},\"HEAD\":{\"target\":\"bugFix\",\"id\":\"HEAD\"}}",
   "solutionCommand": "git branch bugFix;git checkout bugFix",
-  "hint": "Make a new branch with \"git branch [name]\" and check it out with \"git checkout [name]\"",
-  "name": "Branching in Git",
+  // "hint": "Make a new branch with \"git branch [name]\" and check it out with \"git checkout [name]\"",
+  "hint": "\"git branch [브랜치명]\"으로 새 브랜치를 만들고, \"git checkout [브랜치명]\"로 그 브랜치로 이동하세요",
+  "name": "Git에서 브랜치 쓰기",
   "disabledMap" : {
     "git revert": true
   },
@@ -17160,17 +15954,22 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Git Branches",
+            // "## Git Branches",
+            "## Git 브랜치",
             "",
-            "Branches in Git are incredibly lightweight as well. They are simply references to a specific commit -- nothing more. This is why many Git enthusiasts chant the mantra:",
+            // "Branches in Git are incredibly lightweight as well. They are simply references to a specific commit -- nothing more. This is why many Git enthusiasts chant the mantra:",
+            "깃의 브랜치도 놀랍도록 가볍습니다. 브랜치는 특정 커밋에 대한 참조(reference)에 지나지 않습니다. 이런 사실 때문에 수많은 Git 애찬론자들이 자주 이렇게 말하곤 합니다:",
             "",
             "```",
-            "branch early, and branch often",
+            // "branch early, and branch often",
+            "브랜치를 서둘러서, 그리고 자주 만드세요",
             "```",
             "",
-            "Because there is no storage / memory overhead with making many branches, it's easier to logically divide up your work than have big beefy branches.",
+            // "Because there is no storage / memory overhead with making many branches, it's easier to logically divide up your work than have big beefy branches.",
+            "브랜치를 많이 만들어도 메모리나 디스크 공간에 부담이 되지 않기 때문에, 여러분의 작업을 커다른 브랜치로 만들기 보다, 작은 단위로 잘게 나누는 것이 좋습니다.",
             "",
-            "When we start mixing branches and commits, we will see how these two features combine. For now though, just remember that a branch essentially says \"I want to include the work of this commit and all parent commits.\""
+            // "When we start mixing branches and commits, we will see how these two features combine. For now though, just remember that a branch essentially says \"I want to include the work of this commit and all parent commits.\""
+            "브랜치와 커밋을 같이 쓸 때, 어떻게 두 기능이 조화를 이루는지 알아보겠습니다. 하지만 우선은, 단순히 브랜치를 \"하나의 커밋과 그 부모 커밋들을 포함하는 작업 내역\"이라고 기억하시면 됩니다."
           ]
         }
       },
@@ -17178,12 +15977,15 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Let's see what branches look like in practice.",
+            // "Let's see what branches look like in practice.",
+            "브랜치가 어떤 것인지 연습해보죠.",
             "",
-            "Here we will check out a new branch named `newImage`"
+            // "Here we will check out a new branch named `newImage`"
+            "`newImage`라는 브랜치를 살펴보겠습니다."
           ],
           "afterMarkdowns": [
-            "There, that's all there is to branching! The branch `newImage` now refers to commit `C1`"
+            // "There, that's all there is to branching! The branch `newImage` now refers to commit `C1`"
+            "저 그림에 브랜치의 모든 것이 담겨있습니다! 브랜치 `newImage`가 커밋 `C1`를 가리킵니다"
           ],
           "command": "git branch newImage",
           "beforeCommand": ""
@@ -17193,10 +15995,12 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Let's try to put some work on this new branch. Hit the button below"
+            // "Let's try to put some work on this new branch. Hit the button below"
+            "이 새로운 브랜치에 약간의 작업을 더해봅시다. 아래 버튼을 눌러주세요"
           ],
           "afterMarkdowns": [
-            "Oh no! The `master` branch moved but the `newImage` branch didn't! That's because we weren't \"on\" the new branch, which is why the asterisk (*) was on `master`"
+            // "Oh no! The `master` branch moved but the `newImage` branch didn't! That's because we weren't \"on\" the new branch, which is why the asterisk (*) was on `master`"
+            "앗! `master` 브랜치가 움직이고, `newImage` 브랜치는 이동하지 않았네요! 그건 우리가 새 브랜치 위에 있지 않았었기 때문입니다. 별표(*)가 `master`에 있었던 것이죠."
           ],
           "command": "git commit",
           "beforeCommand": "git branch newImage"
@@ -17206,16 +16010,25 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Let's tell git we want to checkout the branch with",
+            // "Let's tell git we want to checkout the branch with",
+            // "",
+            // "```",
+            // "git checkout [name]",
+            // "```",
+            // "",
+            // "This will put us on the new branch before committing our changes"
+            "아래의 명령으로 새 브랜치로 이동해 봅시다.",
             "",
             "```",
-            "git checkout [name]",
+            "git checkout [브랜치명]",
             "```",
             "",
-            "This will put us on the new branch before committing our changes"
+            "이렇게 하면 변경분을 커밋하기 전에 새 브랜치로 이동하게 됩니다."
+
           ],
           "afterMarkdowns": [
-            "There we go! Our changes were recorded on the new branch"
+            // "There we go! Our changes were recorded on the new branch"
+            "이거죠! 이제 우리의 변경이 새 브랜치에 기록되었습니다!"
           ],
           "command": "git checkout newImage; git commit",
           "beforeCommand": "git branch newImage"
@@ -17225,8 +16038,10 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "Ok! You are all ready to get branching. Once this window closes,",
-            "make a new branch named `bugFix` and switch to that branch"
+            // "Ok! You are all ready to get branching. Once this window closes,",
+            // "make a new branch named `bugFix` and switch to that branch"
+            "좋아요! 이제 직접 브랜치 작업을 연습해봅시다. 이 창을 닫고,",
+            "`bugFix`라는 새 브랜치를 만드시고, 그 브랜치로 이동해보세요"
           ]
         }
       }
@@ -17238,8 +16053,10 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
 require.define("/src/levels/intro/3.js",function(require,module,exports,__dirname,__filename,process,global){exports.level = {
   "goalTreeString": "{\"branches\":{\"master\":{\"target\":\"C4\",\"id\":\"master\"},\"bugFix\":{\"target\":\"C2\",\"id\":\"bugFix\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C1\"],\"id\":\"C3\"},\"C4\":{\"parents\":[\"C2\",\"C3\"],\"id\":\"C4\"}},\"HEAD\":{\"target\":\"master\",\"id\":\"HEAD\"}}",
   "solutionCommand": "git checkout -b bugFix;git commit;git checkout master;git commit;git merge bugFix",
-  "name": "Merging in Git",
-  "hint": "Remember to commit in the order specified (bugFix before master)",
+  // "name": "Merging in Git",
+  "name": "Git에서 브랜치 합치기(Merge)",
+  // "hint": "Remember to commit in the order specified (bugFix before master)",
+  "hint": "말씀드린 순서대로 커밋해주세요 (bugFix에 먼저 커밋하고 master에 커밋)",
   "disabledMap" : {
     "git revert": true
   },
@@ -17249,13 +16066,21 @@ require.define("/src/levels/intro/3.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Branches and Merging",
+            // "## Branches and Merging",
+            // "",
+            // "Great! We now know how to commit and branch. Now we need to learn some kind of way of combining the work from two different branches together. This will allow us to branch off, develop a new feature, and then combine it back in.",
+            // "",
+            // "The first method to combine work that we will examine is `git merge`. Merging in Git creates a special commit that has two unique parents. A commit with two parents essentially means \"I want to include all the work from this parent over here and this one over here, *and* the set of all their parents.\"",
+            // "",
+            // "It's easier with visuals, let's check it out in the next view"
+            "## 브랜치와 합치기(Merge)",
             "",
-            "Great! We now know how to commit and branch. Now we need to learn some kind of way of combining the work from two different branches together. This will allow us to branch off, develop a new feature, and then combine it back in.",
+            "좋습니다! 지금까지 커밋하고 브랜치를 만드는 방법을 알아봤습니다. 이제 두 별도의 브랜치를 합치는 몇가지 방법을 알아볼 차례입니다. 이제부터 배우는 방법으로 브랜치를 따고, 새 기능을 개발 한 다음 합칠 수 있게 될 것입니다.",
             "",
-            "The first method to combine work that we will examine is `git merge`. Merging in Git creates a special commit that has two unique parents. A commit with two parents essentially means \"I want to include all the work from this parent over here and this one over here, *and* the set of all their parents.\"",
+            "처음으로 살펴볼 방법은 `git merge`입니다. Git의 합치기(merge)는 두 개의 부모(parent)를 가리키는 특별한 커밋을 만들어 냅니다. 두개의 부모가 있는 커밋이라는 것은 \"한 부모의 모든 작업내역과 나머지 부모의 모든 작업, *그리고* 그 두 부모의 모든 부모들의 작업내역을 포함한다\"라는 의미가 있습니다. ",
             "",
-            "It's easier with visuals, let's check it out in the next view"
+            "그림으로 보는게 이해하기 쉬워요. 다음 화면을 봅시다."
+
           ]
         }
       },
@@ -17263,16 +16088,22 @@ require.define("/src/levels/intro/3.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Here we have two branches; each has one commit that's unique. This means that neither branch includes the entire set of \"work\" in the repository that we have done. Let's fix that with merge.",
+            // "Here we have two branches; each has one commit that's unique. This means that neither branch includes the entire set of \"work\" in the repository that we have done. Let's fix that with merge.",
+            // "",
+            // "We will `merge` the branch `bugFix` into `master`"
+            "여기에 브랜치가 두 개 있습니다. 각 브랜치에 독립된 커밋이 하나씩 있구요. 그 말은 이 저장소에 지금까지 작업한 내역이 나뉘어 담겨 있다는 얘기입니다. 두 브랜치를 합쳐서(merge) 이 문제를 해결해 볼까요?",
             "",
-            "We will `merge` the branch `bugFix` into `master`"
+            "`bugFix` 브랜치를 `master` 브랜치에 합쳐(merge) 보겠습니다."
           ],
           "afterMarkdowns": [
-            "Woah! See that? First of all, `master` now points to a commit that has two parents. If you follow the arrows upstream from `master`, you will hit every commit along the way to the root. This means that `master` contains all the work in the repository now.",
+            // "Woah! See that? First of all, `master` now points to a commit that has two parents. If you follow the arrows upstream from `master`, you will hit every commit along the way to the root. This means that `master` contains all the work in the repository now.",
+            "보셨어요? 우선, `master`가 두 부모가 있는 커밋을 가리키고 있습니다. ",
             "",
-            "Also, see how the colors of the commits changed? To help with learning, I have included some color coordination. Each branch has a unique color. Each commit turns a color that is the blended combination of all the branches that contain that commit.",
+            // "Also, see how the colors of the commits changed? To help with learning, I have included some color coordination. Each branch has a unique color. Each commit turns a color that is the blended combination of all the branches that contain that commit.",
+            "또, 커밋들의 색이 바뀐 것을 눈치 채셨나요? 이해를 돕기위해 색상으로 구분해 표현했습니다. 각 브랜치는 그 브랜치만의 색상으로 그렸습니다. 브랜치가 합쳐지는 커밋의 경우에는, 그 브랜치들의 색을 조합한 색상으로 표시 했습니다.",
             "",
-            "So here we see that the `master` branch color is blended into all the commits, but the `bugFix` color is not. Let's fix that..."
+            // "So here we see that the `master` branch color is blended into all the commits, but the `bugFix` color is not. Let's fix that..."
+            "그런식으로 여기에 `bugFix`브랜치 쪽을 제외한 나머지 커밋만 `master` 브랜치의 색으로 칠해져 있습니다. 이걸 고쳐보죠..."
           ],
           "command": "git merge bugFix master",
           "beforeCommand": "git checkout -b bugFix; git commit; git checkout master; git commit"
@@ -17282,12 +16113,15 @@ require.define("/src/levels/intro/3.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Let's merge `master` into `bugFix`:"
+            // "Let's merge `master` into `bugFix`:"
+            "이제 `master` 브랜치에 `bugFix`를 합쳐(merge) 봅시다:"
           ],
           "afterMarkdowns": [
-            "Since `bugFix` was downstream of `master`, git didn't have to do any work; it simply just moved `bugFix` to the same commit `master` was attached to.",
+            // "Since `bugFix` was downstream of `master`, git didn't have to do any work; it simply just moved `bugFix` to the same commit `master` was attached to.",
+            "`bugFix`가 `master`의 부모쪽에 있었기 때문에, git이 별다른 일을 할 필요가 없었습니다; 간단히 `bugFix`를 `master`가 붙어 있는 커밋으로 이동시켰을 뿐입니다.",
             "",
-            "Now all the commits are the same color, which means each branch contains all the work in the repository! Woohoo"
+            // "Now all the commits are the same color, which means each branch contains all the work in the repository! Woohoo"
+            "짜잔! 이제 모든 커밋의 색이 같아졌고, 이는 두 브랜치가 모두 저장소의 모든 작업 내역을 포함하고 있다는 뜻입니다."
           ],
           "command": "git merge master bugFix",
           "beforeCommand": "git checkout -b bugFix; git commit; git checkout master; git commit; git merge bugFix master"
@@ -17297,16 +16131,27 @@ require.define("/src/levels/intro/3.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "To complete this level, do the following steps:",
+            // "To complete this level, do the following steps:",
+            // "",
+            // "* Make a new branch called `bugFix`",
+            // "* Checkout the `bugFix` branch with `git checkout bugFix`",
+            // "* Commit once",
+            // "* Go back to `master` with `git checkout`",
+            // "* Commit another time",
+            // "* Merge the branch `bugFix` into `master` with `git merge`",
+            // "",
+            // "*Remember, you can always re-display this dialog with \"help level\"!*"
+            "아래 작업을 해서 이 레벨을 통과하세요:",
             "",
-            "* Make a new branch called `bugFix`",
-            "* Checkout the `bugFix` branch with `git checkout bugFix`",
-            "* Commit once",
-            "* Go back to `master` with `git checkout`",
-            "* Commit another time",
-            "* Merge the branch `bugFix` into `master` with `git merge`",
+            "* `bugFix`라는 새 브랜치를 만듭니다",
+            "* `git checkout bugFix`를 입력해 `bugFix` 브랜치로 이동(checkout)합니다.",
+            "* 커밋 한 번 하세요",
+            "* `git checkout` 명령어를 이용해 `master`브랜치로 돌아갑니다",
+            "* 커밋 또 하세요",
+            "* `git merge` 명령어로 `bugFix`브랜치를 `master`에 합쳐 넣습니다.",
             "",
-            "*Remember, you can always re-display this dialog with \"help level\"!*"
+            "*아 그리고, \"help level\" 명령어로 이 안내창을 다시 볼 수 있다는 것을 기억해 두세요!*"
+
           ]
         }
       }
@@ -17319,8 +16164,10 @@ require.define("/src/levels/intro/3.js",function(require,module,exports,__dirnam
 require.define("/src/levels/intro/4.js",function(require,module,exports,__dirname,__filename,process,global){exports.level = {
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C3%22%2C%22id%22%3A%22master%22%7D%2C%22bugFix%22%3A%7B%22target%22%3A%22C2%27%22%2C%22id%22%3A%22bugFix%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C2%27%22%3A%7B%22parents%22%3A%5B%22C3%22%5D%2C%22id%22%3A%22C2%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22bugFix%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git checkout -b bugFix;git commit;git checkout master;git commit;git checkout bugFix;git rebase master",
-  "name": "Rebase Introduction",
-  "hint": "Make sure you commit from bugFix first",
+  // "name": "Rebase Introduction",
+  // "hint": "Make sure you commit from bugFix first",
+  "name": "리베이스(rebase)의 기본",
+  "hint": "bugFix 브랜치에서 먼저 커밋하세요",
   "disabledMap" : {
     "git revert": true
   },
@@ -17330,13 +16177,17 @@ require.define("/src/levels/intro/4.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Git Rebase",
+            // "## Git Rebase",
+            "## Git 리베이스(Rebase)",
             "",
-            "The second way of combining work between branches is *rebasing.* Rebasing essentially takes a set of commits, \"copies\" them, and plops them down somewhere else.",
+            // "The second way of combining work between branches is *rebasing.* Rebasing essentially takes a set of commits, \"copies\" them, and plops them down somewhere else.",
+            "브랜치끼리의 작업을 접목하는 두번째 방법은 *리베이스(rebase)*입니다. 리베이스는 기본적으로 커밋들을 모아서 복사한 뒤, 다른 곳에 떨궈 놓는 것입니다.",
             "",
-            "While this sounds confusing, the advantage of rebasing is that it can be used to make a nice linear sequence of commits. The commit log / history of the repository will be a lot cleaner if only rebasing is allowed.",
+            // "While this sounds confusing, the advantage of rebasing is that it can be used to make a nice linear sequence of commits. The commit log / history of the repository will be a lot cleaner if only rebasing is allowed.",
+            "조금 어려게 느껴질 수 있지만, 리베이스를 하면 커밋들의 흐름을 보기 좋게 한 줄로 만들 수 있다는 장점이 있습니다. 리베이스를 쓰면 저장소의 커밋 로그와 이력이 한결 깨끗해집니다.",
             "",
-            "Let's see it in action..."
+            // "Let's see it in action..."
+            "어떻게 동작하는지 살펴볼까요..."
           ]
         }
       },
@@ -17344,18 +16195,24 @@ require.define("/src/levels/intro/4.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Here we have two branches yet again; note that the bugFix branch is currently selected (note the asterisk)",
+            // "Here we have two branches yet again; note that the bugFix branch is currently selected (note the asterisk)",
+            "여기 또 브랜치 두 개가 있습니다; bugFix브랜치가 현재 선택됐다는 점 눈여겨 보세요 (별표 표시)",
             "",
-            "We would like to move our work from bugFix directly onto the work from master. That way it would look like these two features were developed sequentially, when in reality they were developed in parallel.",
+            // "We would like to move our work from bugFix directly onto the work from master. That way it would look like these two features were developed sequentially, when in reality they were developed in parallel.",
+            "bugFix 브랜치에서의 작업을 master 브랜치 위로 직접 옮겨 놓으려고 합니다. 그렇게 하면, 실제로는 두 기능을 따로따로 개발했지만, 마치 순서대로 개발한 것처럼 보이게 됩니다.",
             "",
-            "Let's do that with the `git rebase` command"
+            // "Let's do that with the `git rebase` command"
+            "`git rebase` 명령어로 함께 해보죠."
           ],
           "afterMarkdowns": [
-            "Awesome! Now the work from our bugFix branch is right on top of master and we have a nice linear sequence of commits.",
+            // "Awesome! Now the work from our bugFix branch is right on top of master and we have a nice linear sequence of commits.",
+            "오! 이제 bugFix 브랜치의 작업 내용이 master의 바로 위에 깔끔한 한 줄의 커밋으로 보이게 됐습니다.",
             "",
-            "Note that the commit C3 still exists somewhere (it has a faded appearance in the tree), and C3' is the \"copy\" that we rebased onto master.",
+            // "Note that the commit C3 still exists somewhere (it has a faded appearance in the tree), and C3' is the \"copy\" that we rebased onto master.",
+            "C3 커밋은 어딘가에 아직 남아있고(그림에서 흐려짐), C3'는 master 위에 올려 놓은 복사본입니다.",
             "",
-            "The only problem is that master hasn't been updated either, let's do that now..."
+            // "The only problem is that master hasn't been updated either, let's do that now..."
+            "master가 아직 그대로라는 문제가 남아있는데요, 바로 해결해보죠..."
           ],
           "command": "git rebase master",
           "beforeCommand": "git commit; git checkout -b bugFix C1; git commit"
@@ -17365,10 +16222,12 @@ require.define("/src/levels/intro/4.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Now we are checked out on the `master` branch. Let's do ahead and rebase onto `bugFix`..."
+            // "Now we are checked out on the `master` branch. Let's do ahead and rebase onto `bugFix`..."
+            "우리는 지금 `master` 브랜치를 선택한 상태입니다. `bugFix` 브랜치쪽으로 리베이스 해보겠습니다..."
           ],
           "afterMarkdowns": [
-            "There! Since `master` was downstream of `bugFix`, git simply moved the `master` branch reference forward in history."
+            // "There! Since `master` was downstream of `bugFix`, git simply moved the `master` branch reference forward in history."
+            "보세요! `master`가 `bugFix`의 부모쪽에 있었기 때문에, 단순히 그 브랜치를 더 앞쪽의 커밋을 가리키게 이동하는 것이 전부입니다."
           ],
           "command": "git rebase bugFix",
           "beforeCommand": "git commit; git checkout -b bugFix C1; git commit; git rebase master; git checkout master"
@@ -17378,14 +16237,20 @@ require.define("/src/levels/intro/4.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "To complete this level, do the following",
+            // "To complete this level, do the following",
+            "이하 작업을 하면 이번 레벨을 통과합니다",
             "",
-            "* Checkout a new branch named `bugFix`",
-            "* Commit once",
-            "* Go back to master and commit again",
-            "* Check out bugFix again and rebase onto master",
+            // "* Checkout a new branch named `bugFix`",
+            "* `bugFix`라는 새 브랜치를 만들어 선택하세요",
+            // "* Commit once",
+            "* 커밋 한 번 합니다",
+            // "* Go back to master and commit again",
+            "* master로 돌아가서 또 커밋합니다",
+            // "* Check out bugFix again and rebase onto master",
+            "* bugFix를 다시 선택하고 master에 리베이스 하세요",
             "",
-            "Good luck!"
+            // "Good luck!"
+            "화이팅!"
           ]
         }
       }
@@ -17399,7 +16264,8 @@ require.define("/src/levels/intro/5.js",function(require,module,exports,__dirnam
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C1%22%2C%22id%22%3A%22master%22%7D%2C%22pushed%22%3A%7B%22target%22%3A%22C2%27%22%2C%22id%22%3A%22pushed%22%7D%2C%22local%22%3A%7B%22target%22%3A%22C1%22%2C%22id%22%3A%22local%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C2%27%22%3A%7B%22parents%22%3A%5B%22C2%22%5D%2C%22id%22%3A%22C2%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22pushed%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git reset HEAD~1;git checkout pushed;git revert HEAD",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"},\"pushed\":{\"target\":\"C2\",\"id\":\"pushed\"},\"local\":{\"target\":\"C3\",\"id\":\"local\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C1\"],\"id\":\"C3\"}},\"HEAD\":{\"target\":\"local\",\"id\":\"HEAD\"}}",
-  "name": "Reversing Changes in Git",
+  // "name": "Reversing Changes in Git",
+  "name": "Git에서 작업 되돌리기",
   "hint": "",
   "startDialog": {
     "childViews": [
@@ -17407,11 +16273,14 @@ require.define("/src/levels/intro/5.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Reversing Changes in Git",
+            // "## Reversing Changes in Git",
+            "## Git에서 작업 되돌리기",
             "",
-            "There are many ways to reverse changes in Git. And just like committing, reversing changes in Git has both a low-level component (staging individual files or chunks) and a high-level component (how the changes are actually reversed). Our application will focus on the latter.",
+            // "There are many ways to reverse changes in Git. And just like committing, reversing changes in Git has both a low-level component (staging individual files or chunks) and a high-level component (how the changes are actually reversed). Our application will focus on the latter.",
+            "Git에는 작업한 것을 되돌리는 여러가지 방법이 있습니다. 변경내역을 되돌리는 것도 커밋과 마찬가지로 낮은 수준의 일(개별 파일이나 묶음을 스테이징 하는 것)과 높은 수준의 일(실제 변경이 복구되는 방법)이 있는데요, 여기서는 후자에 집중해 알려드릴게요.",
             "",
-            "There are two primary ways to undo changes in Git -- one is using `git reset` and the other is using `git revert`. We will look at each of these in the next dialog",
+            // "There are two primary ways to undo changes in Git -- one is using `git reset` and the other is using `git revert`. We will look at each of these in the next dialog",
+            "Git에서 변경한 내용을 되돌리는 방법은 크게 두가지가 있습니다 -- 하나는 `git reset`을 쓰는거고, 다른 하나는 `git revert`를 사용하는 것입니다. 다음 화면에서 하나씩 알아보겠습니다.",
             ""
           ]
         }
@@ -17420,14 +16289,18 @@ require.define("/src/levels/intro/5.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "## Git Reset",
+            // "## Git Reset",
+            "## Git 리셋(reset)",
             "",
-            "`git reset` reverts changes by moving a branch reference backwards in time to an older commit. In this sense you can think of it as \"rewriting history;\" `git reset` will move a branch backwards as if the commit had never been made in the first place.",
+            // "`git reset` reverts changes by moving a branch reference backwards in time to an older commit. In this sense you can think of it as \"rewriting history;\" `git reset` will move a branch backwards as if the commit had never been made in the first place.",
+            "`git reset`은 브랜치로 하여금 예전의 커밋을 가리키도록 이동시키는 방식으로 변경 내용을 되돌립니다. 이런 관점에서 \"히스토리를 고쳐쓴다\"라고 말할 수 있습니다. 즉, `git reset`은 마치 애초에 커밋하지 않은 것처럼 예전 커밋으로 브랜치를 옮기는 것입니다.",
             "",
-            "Let's see what that looks like:"
+            // "Let's see what that looks like:"
+            "어떤 그림인지 한번 보죠:"
           ],
           "afterMarkdowns": [
-            "Nice! Git simply moved the master branch reference back to `C1`; now our local repository is in a state as if `C2` had never happened"
+            // "Nice! Git simply moved the master branch reference back to `C1`; now our local repository is in a state as if `C2` had never happened"
+            "그림에서처럼 master 브랜치가 가리키던 커밋을 `C1`로 다시 옮겼습니다; 이러면 로컬 저장소에는 마치 `C2`커밋이 아예 없었던 것과 마찬가지 상태가 됩니다."
           ],
           "command": "git reset HEAD~1",
           "beforeCommand": "git commit"
@@ -17437,16 +16310,21 @@ require.define("/src/levels/intro/5.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "## Git Revert",
+            // "## Git Revert",
+            "## Git 리버트(revert)",
             "",
-            "While reseting works great for local branches on your own machine, it's method of \"rewriting history\" doesn't work for remote branches that others are using.",
+            // "While reseting works great for local branches on your own machine, it's method of \"rewriting history\" doesn't work for remote branches that others are using.",
+            "각자의 컴퓨터에서 작업하는 로컬 브랜치의 경우 리셋(reset)을 잘 쓸 수 있습니다만, \"히스토리를 고쳐쓴다\"는 점 때문에 다른 사람이 작업하는 리모트 브랜치에는 쓸 수 없습니다.",
             "",
-            "In order to reverse changes and *share* those reversed changes with others, we need to use `git revert`. Let's see it in action"
+            // "In order to reverse changes and *share* those reversed changes with others, we need to use `git revert`. Let's see it in action"
+            "변경분을 되돌리고, 이 되돌린 내용을 다른 사람들과 *공유하기* 위해서는, `git revert`를 써야합니다. 예제로 살펴볼게요."
           ],
           "afterMarkdowns": [
-            "Weird, a new commit plopped down below the commit we wanted to reverse. That's because this new commit `C2'` introduces *changes* -- it just happens to introduce changes that exactly reverses the commit of `C2`.",
+            // "Weird, a new commit plopped down below the commit we wanted to reverse. That's because this new commit `C2'` introduces *changes* -- it just happens to introduce changes that exactly reverses the commit of `C2`.",
+            "어색하게도, 우리가 되돌리려고한 커밋의 아래에 새로운 커밋이 생겼습니다. `C2`라는 새로운 커밋에 *변경내용*이 기록되는데요, 이 변경내역이 정확히 `C1` 커밋 내용의 반대되는 내용입니다.",
             "",
-            "With reverting, you can push out your changes to share with others."
+            // "With reverting, you can push out your changes to share with others."
+            "리버트를 하면 다른 사람들에게도 변경 내역을 밀어(push) 보낼 수 있습니다."
           ],
           "command": "git revert HEAD",
           "beforeCommand": "git commit"
@@ -17456,9 +16334,11 @@ require.define("/src/levels/intro/5.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "To complete this level, reverse the two most recent commits on both `local` and `pushed`.",
+            // "To complete this level, reverse the two most recent commits on both `local` and `pushed`.",
+            "이 레벨을 통과하려면, `local` 브랜치와 `pushed` 브랜치에 있는 최근 두 번의 커밋을 되돌려 보세요.",
             "",
-            "Keep in mind that `pushed` is a remote branch and `local` is a local branch -- that should help you chose your methods."
+            // "Keep in mind that `pushed` is a remote branch and `local` is a local branch -- that should help you chose your methods."
+            "`pushed`는 리모트 브랜치이고, `local`은 로컬 브랜치임을 신경쓰셔서 작업하세요 -- 어떤 방법을 선택하실지 떠오르시죠?"
           ]
         }
       }
@@ -17476,21 +16356,27 @@ require.define("/src/levels/rebase/1.js",function(require,module,exports,__dirna
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C7%27%22%2C%22id%22%3A%22master%22%7D%2C%22bugFix%22%3A%7B%22target%22%3A%22C3%27%22%2C%22id%22%3A%22bugFix%22%7D%2C%22side%22%3A%7B%22target%22%3A%22C6%27%22%2C%22id%22%3A%22side%22%7D%2C%22another%22%3A%7B%22target%22%3A%22C7%27%22%2C%22id%22%3A%22another%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C4%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C4%22%7D%2C%22C5%22%3A%7B%22parents%22%3A%5B%22C4%22%5D%2C%22id%22%3A%22C5%22%7D%2C%22C6%22%3A%7B%22parents%22%3A%5B%22C5%22%5D%2C%22id%22%3A%22C6%22%7D%2C%22C7%22%3A%7B%22parents%22%3A%5B%22C5%22%5D%2C%22id%22%3A%22C7%22%7D%2C%22C3%27%22%3A%7B%22parents%22%3A%5B%22C2%22%5D%2C%22id%22%3A%22C3%27%22%7D%2C%22C4%27%22%3A%7B%22parents%22%3A%5B%22C3%27%22%5D%2C%22id%22%3A%22C4%27%22%7D%2C%22C5%27%22%3A%7B%22parents%22%3A%5B%22C4%27%22%5D%2C%22id%22%3A%22C5%27%22%7D%2C%22C6%27%22%3A%7B%22parents%22%3A%5B%22C5%27%22%5D%2C%22id%22%3A%22C6%27%22%7D%2C%22C7%27%22%3A%7B%22parents%22%3A%5B%22C6%27%22%5D%2C%22id%22%3A%22C7%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22master%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git checkout bugFix;git rebase master;git checkout side;git rebase bugFix;git checkout another;git rebase side;git rebase another master",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C2\",\"id\":\"master\"},\"bugFix\":{\"target\":\"C3\",\"id\":\"bugFix\"},\"side\":{\"target\":\"C6\",\"id\":\"side\"},\"another\":{\"target\":\"C7\",\"id\":\"another\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C1\"],\"id\":\"C3\"},\"C4\":{\"parents\":[\"C0\"],\"id\":\"C4\"},\"C5\":{\"parents\":[\"C4\"],\"id\":\"C5\"},\"C6\":{\"parents\":[\"C5\"],\"id\":\"C6\"},\"C7\":{\"parents\":[\"C5\"],\"id\":\"C7\"}},\"HEAD\":{\"target\":\"master\",\"id\":\"HEAD\"}}",
-  "name": "Rebasing over 9000 times",
-  "hint": "Remember, the most efficient way might be to only update master at the end...",
+  // "name": "Rebasing over 9000 times",
+  "name": "9천번이 넘는 리베이스",
+  // "hint": "Remember, the most efficient way might be to only update master at the end...",
+  "hint": "아마도 master를 마지막에 업데이트하는 것이 가장 효율적인 방법일 것입니다...",
   "startDialog": {
     "childViews": [
       {
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "### Rebasing Multiple Branches",
+            // "### Rebasing Multiple Branches",
+            "### 여러 브랜치를 리베이스(rebase)하기 ",
             "",
-            "Man, we have a lot of branches going on here! Let's rebase all the work from these branches onto master.",
+            // "Man, we have a lot of branches going on here! Let's rebase all the work from these branches onto master.",
+            "음, 여기 꽤 여러개의 브랜치가 있습니다! 이 브랜치들의 모든 작업내역을 master에 리베이스 해볼까요?",
             "",
-            "Upper management is making this a bit trickier though -- they want the commits to all be in sequential order. So this means that our final tree should have `C7'` at the bottom, `C6'` above that, etc etc, etc all in order.",
+            // "Upper management is making this a bit trickier though -- they want the commits to all be in sequential order. So this means that our final tree should have `C7'` at the bottom, `C6'` above that, etc etc, etc all in order.",
+            "윗선에서 일을 복잡하게 만드네요 -- 그 분들이 이 모든 커밋들을 순서에 맞게 정렬하라고 합니다. 그럼 결국 우리의 최종 목표 트리는 제일 아래에 `C7'` 커밋, 그 위에 `C6'` 커밋, 또 그 위에 순서대로 보여합니다.",
             "",
-            "If you mess up along the way, feel free to use `reset` to start over again. Be sure to check out our solution and see if you can do it in fewer commands!"
+            // "If you mess up along the way, feel free to use `reset` to start over again. Be sure to check out our solution and see if you can do it in fewer commands!"
+            "만일 작업중에 내용이 꼬인다면, `reset`이라고 쳐서 처음부터 다시 시작할 수 있습니다. 모범 답안을 확인해 보시고, 혹시 더 적은 수의 커맨드로 해결할 수 있는지 알아보세요!",
           ]
         }
       }
@@ -17508,19 +16394,24 @@ require.define("/src/levels/rebase/2.js",function(require,module,exports,__dirna
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C5%22%2C%22id%22%3A%22master%22%7D%2C%22one%22%3A%7B%22target%22%3A%22C2%27%22%2C%22id%22%3A%22one%22%7D%2C%22two%22%3A%7B%22target%22%3A%22C2%27%27%22%2C%22id%22%3A%22two%22%7D%2C%22three%22%3A%7B%22target%22%3A%22C2%22%2C%22id%22%3A%22three%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C2%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C4%22%3A%7B%22parents%22%3A%5B%22C3%22%5D%2C%22id%22%3A%22C4%22%7D%2C%22C5%22%3A%7B%22parents%22%3A%5B%22C4%22%5D%2C%22id%22%3A%22C5%22%7D%2C%22C4%27%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C4%27%22%7D%2C%22C3%27%22%3A%7B%22parents%22%3A%5B%22C4%27%22%5D%2C%22id%22%3A%22C3%27%22%7D%2C%22C2%27%22%3A%7B%22parents%22%3A%5B%22C3%27%22%5D%2C%22id%22%3A%22C2%27%22%7D%2C%22C5%27%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C5%27%22%7D%2C%22C4%27%27%22%3A%7B%22parents%22%3A%5B%22C5%27%22%5D%2C%22id%22%3A%22C4%27%27%22%7D%2C%22C3%27%27%22%3A%7B%22parents%22%3A%5B%22C4%27%27%22%5D%2C%22id%22%3A%22C3%27%27%22%7D%2C%22C2%27%27%22%3A%7B%22parents%22%3A%5B%22C3%27%27%22%5D%2C%22id%22%3A%22C2%27%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22two%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git checkout one; git cherry-pick C4; git cherry-pick C3; git cherry-pick C2; git checkout two; git cherry-pick C5; git cherry-pick C4; git cherry-pick C3; git cherry-pick C2; git branch -f three C2",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C5\",\"id\":\"master\"},\"one\":{\"target\":\"C1\",\"id\":\"one\"},\"two\":{\"target\":\"C1\",\"id\":\"two\"},\"three\":{\"target\":\"C1\",\"id\":\"three\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C2\"],\"id\":\"C3\"},\"C4\":{\"parents\":[\"C3\"],\"id\":\"C4\"},\"C5\":{\"parents\":[\"C4\"],\"id\":\"C5\"}},\"HEAD\":{\"target\":\"master\",\"id\":\"HEAD\"}}",
-  "name": "Branch Spaghetti",
-  "hint": "There are multiple ways to solve this! Cherry-pick is the easy / long way, but rebase -i can be a shortcut",
+  // "name": "Branch Spaghetti",
+  "name": "브랜치 스파게티",
+  // "hint": "There are multiple ways to solve this! Cherry-pick is the easy / long way, but rebase -i can be a shortcut",
+  "hint": "이 문제를 해결하는 방법은 여러가지가 있습니다! 체리픽(cherry-pick)이 가장 쉽지만 오래걸리는 방법이고, 리베이스(rebase -i)가 빠른 방법입니다",
   "startDialog": {
     "childViews": [
       {
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Branch Spaghetti",
+            // "## Branch Spaghetti",
+            "## 브랜치 스파게티",
             "",
-            "WOAHHHhhh Nelly! We have quite the goal to reach in this level.",
+            // "WOAHHHhhh Nelly! We have quite the goal to reach in this level.",
+            "음, 이번에는 만만치 않습니다!",
             "",
-            "Here we have `master` that is a few commits ahead of branches `one` `two` and `three`. For whatever reason, we need to update these three other branches with modified versions of the last few commits on master.",
+            // "Here we have `master` that is a few commits ahead of branches `one` `two` and `three`. For whatever reason, we need to update these three other branches with modified versions of the last few commits on master.",
+            "여기 `master` 브랜치가 `one`, `two`, 그리고 `three`브랜치보다 몇번 앞의 커밋에 있습니다. 어떤 이유인지는 몰라도, master에 ",
             "",
             "Branch `one` needs a re-ordering and a deletion of `C5`. `two` needs pure reordering, and `three` only needs one commit!",
             "",
@@ -17747,7 +16638,7 @@ var LevelDropdownView = ContainedBase.extend({
     this.sequenceToLevels = Main.getLevelArbiter().getSequenceToLevels();
 
     this.container = new ModalTerminal({
-      title: 'Select a Level'
+      title: '레벨 고르기'//'Select a Level'
     });
     this.render();
     this.buildSequences();
@@ -18440,28 +17331,37 @@ require.define("/src/js/dialogs/sandbox.js",function(require,module,exports,__di
   type: 'ModalAlert',
   options: {
     markdowns: [
-      '## Welcome to LearnGitBranching!',
+      //'## Welcome to LearnGitBranching!',
+      '## Git 브랜치 배우기를 시작합니다!',
       '',
-      'This application is designed to help beginners grasp ',
-      'the powerful concepts behind branching when working ',
-      'with git. We hope you enjoy this application and maybe ',
-      'even learn something!',
+      // 'This application is designed to help beginners grasp ',
+      // 'the powerful concepts behind branching when working ',
+      // 'with git. We hope you enjoy this application and maybe ',
+      // 'even learn something!',
+      '이 애플리케이션은 git을 쓸 때 필요한 브랜치에 대한 개념을',
+      '탄탄히 잡게끔 도와드리기 위해 만들었습니다. 재밌게 사용해주시기를',
+      '바라며, 무언가를 배워가신다면 더 기쁘겠습니다!',
+      // '',
+      // '# Attention HN!!',
+      // '',
+      // 'Unfortunately this was submitted before I finished all the help ',
+      // 'and tutorial sections, so forgive the scarcity. See the demo here:',
       '',
-      '# Attention HN!!',
+      '이 애플리케이션은 [Peter Cottle](https://github.com/pcottle)님의 [LearnGitBranching](http://pcottle.github.com/learnGitBranching/)를 번역한 것입니다.',
+      '아래 데모를 먼저 보셔도 좋습니다.',
       '',
-      'Unfortunately this was submitted before I finished all the help ',
-      'and tutorial sections, so forgive the scarcity. See the demo here:',
-      '',
-      '[http://pcottle.github.com/learnGitBranching/?demo](http://pcottle.github.com/learnGitBranching/?demo)'
+      '<http://learnbranch.urigit.com/?demo>'
     ]
   }
 }, {
   type: 'ModalAlert',
   options: {
     markdowns: [
-      '## Git commands',
+      // '## Git commands',
+      '## Git 명령어',
       '',
-      'You have a large variety of git commands available in sandbox mode. These include',
+      // 'You have a large variety of git commands available in sandbox mode. These include',
+      '연습 모드에서 쓸 수 있는 다양한 git명령어는 다음과 같습니다',
       '',
       ' * commit',
       ' * branch',
@@ -18477,13 +17377,20 @@ require.define("/src/js/dialogs/sandbox.js",function(require,module,exports,__di
   type: 'ModalAlert',
   options: {
     markdowns: [
-      '## Sharing is caring!',
+      // '## Sharing is caring!',
+      // '',
+      // 'Share trees with your friends via `export tree` and `import tree`',
+      // '',
+      // 'Have a great lesson to share? Try building a level with `build level` or try out a friend\'s level with `import level`',
+      // '',
+      // 'For now let\'s get you started on the `levels`...'
+      '## 공유해주세요!',
       '',
-      'Share trees with your friends via `export tree` and `import tree`',
+      '`export tree` 와 `import tree`로 여러분의 친구들에게 트리를 공유해주세요',
       '',
-      'Have a great lesson to share? Try building a level with `build level` or try out a friend\'s level with `import level`',
+      '훌륭한 학습 자료가 있으신가요? `build level`로 레벨을 만들어 보시거나, 친구의 레벨을 `import level`로 가져와서 실험해보세요',
       '',
-      'For now let\'s get you started on the `levels`...'
+      '이제 레슨을 시작해봅시다...'
     ]
   }
 }];
@@ -18858,28 +17765,37 @@ require.define("/src/js/dialogs/sandbox.js",function(require,module,exports,__di
   type: 'ModalAlert',
   options: {
     markdowns: [
-      '## Welcome to LearnGitBranching!',
+      //'## Welcome to LearnGitBranching!',
+      '## Git 브랜치 배우기를 시작합니다!',
       '',
-      'This application is designed to help beginners grasp ',
-      'the powerful concepts behind branching when working ',
-      'with git. We hope you enjoy this application and maybe ',
-      'even learn something!',
+      // 'This application is designed to help beginners grasp ',
+      // 'the powerful concepts behind branching when working ',
+      // 'with git. We hope you enjoy this application and maybe ',
+      // 'even learn something!',
+      '이 애플리케이션은 git을 쓸 때 필요한 브랜치에 대한 개념을',
+      '탄탄히 잡게끔 도와드리기 위해 만들었습니다. 재밌게 사용해주시기를',
+      '바라며, 무언가를 배워가신다면 더 기쁘겠습니다!',
+      // '',
+      // '# Attention HN!!',
+      // '',
+      // 'Unfortunately this was submitted before I finished all the help ',
+      // 'and tutorial sections, so forgive the scarcity. See the demo here:',
       '',
-      '# Attention HN!!',
+      '이 애플리케이션은 [Peter Cottle](https://github.com/pcottle)님의 [LearnGitBranching](http://pcottle.github.com/learnGitBranching/)를 번역한 것입니다.',
+      '아래 데모를 먼저 보셔도 좋습니다.',
       '',
-      'Unfortunately this was submitted before I finished all the help ',
-      'and tutorial sections, so forgive the scarcity. See the demo here:',
-      '',
-      '[http://pcottle.github.com/learnGitBranching/?demo](http://pcottle.github.com/learnGitBranching/?demo)'
+      '<http://learnbranch.urigit.com/?demo>'
     ]
   }
 }, {
   type: 'ModalAlert',
   options: {
     markdowns: [
-      '## Git commands',
+      // '## Git commands',
+      '## Git 명령어',
       '',
-      'You have a large variety of git commands available in sandbox mode. These include',
+      // 'You have a large variety of git commands available in sandbox mode. These include',
+      '연습 모드에서 쓸 수 있는 다양한 git명령어는 다음과 같습니다',
       '',
       ' * commit',
       ' * branch',
@@ -18895,13 +17811,20 @@ require.define("/src/js/dialogs/sandbox.js",function(require,module,exports,__di
   type: 'ModalAlert',
   options: {
     markdowns: [
-      '## Sharing is caring!',
+      // '## Sharing is caring!',
+      // '',
+      // 'Share trees with your friends via `export tree` and `import tree`',
+      // '',
+      // 'Have a great lesson to share? Try building a level with `build level` or try out a friend\'s level with `import level`',
+      // '',
+      // 'For now let\'s get you started on the `levels`...'
+      '## 공유해주세요!',
       '',
-      'Share trees with your friends via `export tree` and `import tree`',
+      '`export tree` 와 `import tree`로 여러분의 친구들에게 트리를 공유해주세요',
       '',
-      'Have a great lesson to share? Try building a level with `build level` or try out a friend\'s level with `import level`',
+      '훌륭한 학습 자료가 있으신가요? `build level`로 레벨을 만들어 보시거나, 친구의 레벨을 `import level`로 가져와서 실험해보세요',
       '',
-      'For now let\'s get you started on the `levels`...'
+      '이제 레슨을 시작해봅시다...'
     ]
   }
 }];
@@ -18933,10 +17856,12 @@ var instantCommands = [
     var lines = [
       'Git Version PCOTTLE.1.0',
       '<br/>',
-      'Usage:',
+      // 'Usage:',
+      '사용법:',
       _.escape('\t git <command> [<args>]'),
       '<br/>',
-      'Supported commands:',
+      // 'Supported commands:',
+      '지원하는 명령어:',
       '<br/>'
     ];
     var commands = GitOptionParser.prototype.getMasterOptionMap();
@@ -19071,7 +17996,8 @@ GitOptionParser.prototype.explodeAndSet = function() {
       // it's an option, check supportedMap
       if (this.supportedMap[part] === undefined) {
         throw new CommandProcessError({
-          msg: 'The option "' + part + '" is not supported'
+          // msg: 'The option "' + part + '" is not supported'
+          msg: '옵션 "' +  part + '"는 지원하지 않습니다'
         });
       }
 
@@ -19527,19 +18453,22 @@ GitEngine.prototype.validateBranchName = function(name) {
   name = name.replace(/\s/g, '');
   if (!/^[a-zA-Z0-9]+$/.test(name)) {
     throw new GitError({
-      msg: 'woah bad branch name!! This is not ok: ' + name
+      // msg: 'woah bad branch name!! This is not ok: ' + name
+      msg: '브랜치명으로 쓸 수 없습니다: ' + name
     });
   }
   if (/[hH][eE][aA][dD]/.test(name)) {
     throw new GitError({
-      msg: 'branch name of "head" is ambiguous, dont name it that'
+      // msg: 'branch name of "head" is ambiguous, dont name it that'
+      msg: '"head"라는 브랜치 이름은 불분명합니다. 그렇게 이름짓지 맙시다'
     });
   }
   if (name.length > 9) {
     name = name.slice(0, 9);
     this.command.addWarning(
-      'Sorry, we need to keep branch names short for the visuals. Your branch ' +
-      'name was truncated to 9 characters, resulting in ' + name
+      // 'Sorry, we need to keep branch names short for the visuals. Your branch ' +
+      // 'name was truncated to 9 characters, resulting in ' + name
+      '화면에 보이기 좋게 하기 위해 브랜치이름을 짧게 하고 있어요. 지정하신 브랜치명을 9글자로 줄여서 쓰겠습니다: ' + name
     );
   }
   return name;
@@ -19549,7 +18478,8 @@ GitEngine.prototype.makeBranch = function(id, target) {
   id = this.validateBranchName(id);
   if (this.refs[id]) {
     throw new GitError({
-      msg: 'that branch id either matches a commit hash or already exists!'
+      // msg: 'that branch id either matches a commit hash or already exists!'
+      msg: '그 브랜치 이름이 이미 있거나, 커밋 해쉬와 겹칩니다!'
     });
   }
 
@@ -19628,7 +18558,8 @@ GitEngine.prototype.makeCommit = function(parents, id, options) {
 GitEngine.prototype.acceptNoGeneralArgs = function() {
   if (this.generalArgs.length) {
     throw new GitError({
-      msg: "That command accepts no general arguments"
+      // msg: "That command accepts no general arguments"
+      msg: "입력하신 명령어는 파라미터를 받지 않습니다."
     });
   }
 };
@@ -21197,8 +20128,8 @@ var Backbone = require('backbone');
 
 // Each level is part of a "sequence;" levels within
 // a sequence proceed in order.
-var levelSequences = require('../levels').levelSequences;
-var sequenceInfo = require('../levels').sequenceInfo;
+var levelSequences = require('../../levels').levelSequences;
+var sequenceInfo = require('../../levels').sequenceInfo;
 
 var Main = require('../app');
 
@@ -21934,9 +20865,12 @@ var Level = Sandbox.extend({
     var confirmDefer = Q.defer();
     var confirmView = new ConfirmCancelTerminal({
       markdowns: [
-        '## Are you sure you want to see the solution?',
+        // '## Are you sure you want to see the solution?',
+        // '',
+        // 'I believe in you! You can do it'
+        '## 정말 해답을 보시겠어요?',
         '',
-        'I believe in you! You can do it'
+        '당신도 해내실 수 있다고 믿습니다!'
       ],
       deferred: confirmDefer
     });
@@ -21944,7 +20878,8 @@ var Level = Sandbox.extend({
     confirmDefer.promise
     .then(issueFunc)
     .fail(function() {
-      command.setResult("Great! I'll let you get back to it");
+      // command.setResult("Great! I'll let you get back to it");
+      command.setResult("그렇죠! 계속해봅시다");
     })
     .done(function() {
      // either way we animate, so both options can share this logic
@@ -22055,8 +20990,10 @@ var Level = Sandbox.extend({
   afterCommandDefer: function(defer, command) {
     if (this.solved) {
       command.addWarning(
-        "You've already solved this level, try other levels with 'show levels'" +
-        "or go back to the sandbox with 'sandbox'"
+        // "You've already solved this level, try other levels with 'show levels'" +
+        // "or go back to the sandbox with 'sandbox'"
+        "이미 이 레벨을 해결하셨습니다. 'show levels'를 입력해서 다른 레벨에 도전해보시거나," +
+        "'sandbox'라고 쳐서 연습 화면으로 돌아가보세요"
       );
       defer.resolve();
       return;
@@ -22164,7 +21101,8 @@ var Level = Sandbox.extend({
   getInstantCommands: function() {
     var hintMsg = (this.level.hint) ?
       this.level.hint :
-      "Hmm, there doesn't seem to be a hint for this level :-/";
+      // "Hmm, there doesn't seem to be a hint for this level :-/";
+      "흠, 이번 레벨에는 힌트가 없군요 -_-;";
 
     return [
       [/^help$|^\?$/, function() {
@@ -22772,7 +21710,8 @@ var instantCommands = [
 
     events.trigger('refreshTree');
     throw new CommandResult({
-      msg: "Refreshing tree..."
+      // msg: "Refreshing tree..."
+      msg: "트리 초기화..."
     });
   }],
   [/^rollup (\d+)$/, function(bits) {
@@ -23075,7 +22014,8 @@ var Command = Backbone.Model.extend({
 
     // if we reach here, this command is not supported :-/
     this.set('error', new CommandProcessError({
-        msg: 'The command "' + this.get('rawStr') + '" isn\'t supported, sorry!'
+        // msg: 'The command "' + this.get('rawStr') + '" isn\'t supported, sorry!'
+        msg: '명령어 "' + this.get('rawStr') + '"는 지원되지 않습니다. 죄송!'
       })
     );
   },
@@ -24480,7 +23420,7 @@ var GitDemonstrationView = ContainedBase.extend({
     this.JSON.afterHTML = convert(this.JSON.afterMarkdowns);
 
     this.container = new ModalTerminal({
-      title: options.title || 'Git Demonstration'
+      title: options.title || 'Git 데모'//'Git Demonstration'
     });
     this.render();
     this.checkScroll();
@@ -24815,8 +23755,8 @@ var ConfirmCancelView = ResolveRejectBase.extend({
     this.destination = options.destination;
     this.deferred = options.deferred || Q.defer();
     this.JSON = {
-      confirm: options.confirm || 'Confirm',
-      cancel: options.cancel || 'Cancel'
+      confirm: options.confirm || '확인',//'Confirm',
+      cancel: options.cancel || '취소'//'Cancel'
     };
 
     this.render();
@@ -25013,7 +23953,8 @@ var ModalAlert = ContainedBase.extend({
     }
 
     this.container = new ModalTerminal({
-      title: 'Alert!'
+      // title: 'Alert!'
+      title: '안내'
     });
     this.render();
 
@@ -25112,33 +24053,48 @@ var NextLevelConfirm = ConfirmCancelTerminal.extend({
     var pluralNumCommands = (options.numCommands == 1) ? '' : 's';
     var pluralBest = (options.best == 1) ? '' : 's';
 
+    // var markdowns = [
+    //   '## Great Job!!',
+    //   '',
+    //   'You solved the level in **' + options.numCommands + '** command' + pluralNumCommands + '; ',
+    //   'our solution uses ' + options.best + '. '
+    // ];
     var markdowns = [
-      '## Great Job!!',
+      '## 훌륭합니다!',
       '',
-      'You solved the level in **' + options.numCommands + '** command' + pluralNumCommands + '; ',
-      'our solution uses ' + options.best + '. '
+      '이 레벨을 **' + options.numCommands + '**개의 커맨드로 통과하셨습니다. ',
+      '모범답안은 ' + options.best + '개의 커맨드를 씁니다. '
     ];
 
     if (options.numCommands <= options.best) {
       markdowns.push(
-        'Awesome! You matched or exceeded our solution. '
+        // 'Awesome! You matched or exceeded our solution. '
+        '대단해요! 모범 답안의 수준이거나 더 뛰어납니다.'
       );
     } else {
       markdowns.push(
-        'See if you can whittle it down to ' + options.best + ' command' + pluralBest + ' :D '
+        // 'See if you can whittle it down to ' + options.best + ' command' + pluralBest + ' :D '
+        options.best + '개 이하의 커맨드로 푸실 수 있는지 도전해보세요 ^^;'
       );
     }
 
     if (options.nextLevel) {
+      // markdowns = markdowns.concat([
+      //   '',
+      //   'Would you like to move onto "' +
+      //   nextLevelName + '", the next level?'
+      // ]);
       markdowns = markdowns.concat([
         '',
-        'Would you like to move onto "' +
-        nextLevelName + '", the next level?'
+        '다음 레벨 "' +
+        nextLevelName + '" 로 넘어갈까요?'
       ]);
+
     } else {
       markdowns = markdowns.concat([
         '',
-        'Wow!!! You finished the last level, congratulations!'
+        // 'Wow!!! You finished the last level, congratulations!'
+        '오!!! 마지막 레벨도 끝내셨어요, 축하드립니다!'
       ]);
     }
 
@@ -25273,8 +24229,8 @@ var CanvasTerminalHolder = BaseView.extend({
     options = options || {};
     this.destination = $('body');
     this.JSON = {
-      title: options.title || 'Goal To Reach',
-      text: options.text || 'You can hide this window with "hide goal"'
+      title: options.title || '목표 결과', //'Goal To Reach',
+      text: options.text || '이 창을 닫으시려면 "hide goal"이라고 입력하세요'//'You can hide this window with "hide goal"'
     };
 
     this.render();
@@ -25385,7 +24341,7 @@ var LevelDropdownView = ContainedBase.extend({
     this.sequenceToLevels = Main.getLevelArbiter().getSequenceToLevels();
 
     this.container = new ModalTerminal({
-      title: 'Select a Level'
+      title: '레벨 고르기'//'Select a Level'
     });
     this.render();
     this.buildSequences();
@@ -26523,7 +25479,8 @@ GitVisuals.prototype.finishAnimation = function() {
   var defaultTime = GRAPHICS.defaultAnimationTime;
   var nodeRadius = GRAPHICS.nodeRadius;
 
-  var textString = 'Solved!!\n:D';
+  // var textString = 'Solved!!\n:D';
+  var textString = '정답!!\n^_^';
   var text = null;
   var makeText = _.bind(function() {
     text = this.paper.text(
@@ -28533,49 +27490,53 @@ require.define("/src/levels/index.js",function(require,module,exports,__dirname,
 // a sequence proceed in the order listed here
 exports.levelSequences = {
   intro: [
-    require('../../levels/intro/1').level,
-    require('../../levels/intro/2').level,
-    require('../../levels/intro/3').level,
-    require('../../levels/intro/4').level,
-    require('../../levels/intro/5').level
+    require('../levels/intro/1').level,
+    require('../levels/intro/2').level,
+    require('../levels/intro/3').level,
+    require('../levels/intro/4').level,
+    require('../levels/intro/5').level
   ],
   rebase: [
-    require('../../levels/rebase/1').level,
-    require('../../levels/rebase/2').level
+    require('../levels/rebase/1').level,
+    require('../levels/rebase/2').level
   ],
   mixed: [
-    require('../../levels/mixed/1').level,
-    require('../../levels/mixed/2').level,
-    require('../../levels/mixed/3').level
+    require('../levels/mixed/1').level,
+    require('../levels/mixed/2').level,
+    require('../levels/mixed/3').level
   ]
 };
 
 // there are also cute names and such for sequences
 exports.sequenceInfo = {
   intro: {
-    displayName: 'Introduction Sequence',
-    about: 'A nicely paced introduction to the majority of git commands'
+    // displayName: 'Introduction Sequence',
+    // about: 'A nicely paced introduction to the majority of git commands'
+    displayName: '기본 명령어',
+    about: '브랜치 관련 주요 git 명령어를 깔끔하게 알려드립니다'
   },
   rebase: {
-    displayName: 'Master the Rebase Luke!',
-    about: 'What is this whole rebase hotness everyone is talking about? Find out!'
+    // displayName: 'Master the Rebase Luke!',
+    // about: 'What is this whole rebase hotness everyone is talking about? Find out!'
+    displayName: '리베이스 완전정복!',
+    about: '그 좋다고들 말하는 rebase에 대해 알아봅시다!'
   },
   mixed: {
-    displayName: 'A Mixed Bag',
-    about: 'A mixed bag of Git techniques, tricks, and tips'
+    // displayName: 'A Mixed Bag',
+    // about: 'A mixed bag of Git techniques, tricks, and tips'
+    displayName: '종합선물세트 (아직 영문)',
+    about: 'Git을 다루는 다양한 팁과 테크닉을 다양하게 알아봅니다'
   }
 };
-
-
 });
 require("/src/levels/index.js");
 
 require.define("/src/levels/intro/1.js",function(require,module,exports,__dirname,__filename,process,global){exports.level = {
-  "name": 'Introduction to Git Commits',
+  "name": 'Git 커밋 소개',
   "goalTreeString": "{\"branches\":{\"master\":{\"target\":\"C3\",\"id\":\"master\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C2\"],\"id\":\"C3\"}},\"HEAD\":{\"target\":\"master\",\"id\":\"HEAD\"}}",
   "solutionCommand": "git commit;git commit",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"}},\"HEAD\":{\"target\":\"master\",\"id\":\"HEAD\"}}",
-  "hint": "Just type in 'git commit' twice to finish!",
+  "hint": "'git commit'이라고 두 번 치세요!",
   "disabledMap" : {
     "git revert": true
   },
@@ -28585,18 +27546,22 @@ require.define("/src/levels/intro/1.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Git Commits",
-            "A commit in a git repository records a snapshot of all the files in your directory. It\'s like a giant copy and paste, but even better!",
+            "## Git 커밋",
+            // "A commit in a git repository records a snapshot of all the files in your directory. It\'s like a giant copy and paste, but even better!",
+            "커밋은 Git 저장소에 여러분의 디렉토리에 있는 모든 파일에 대한 스냅샷을 기록하는 것입니다. 디렉토리 전체에 대한 복사해 붙이기와 비슷하지만 훨씬 유용합니다!",
             "",
-            "Git wants to keep commits as lightweight as possible though, so it doesn't just copy the entire directory every time you commit. It actually stores each commit as a set of changes, or a \"delta\", from one version of the repository to the next. That\'s why most commits have a parent commit above them -- you\'ll see this later in our visualizations.",
+            // "Git wants to keep commits as lightweight as possible though, so it doesn't just copy the entire directory every time you commit. It actually stores each commit as a set of changes, or a \"delta\", from one version of the repository to the next. That\'s why most commits have a parent commit above them -- you\'ll see this later in our visualizations.",
+            "Git은 커밋을 가능한한 가볍게 유지하고자 해서, 커밋할 때마다 디렉토리 전체를 복사하는 일은 하지 않습니다. 각 커밋은 저장소의 이전 버전과 다음 버전의 변경내역(\"delta\"라고도 함)을 저장합니다. 그래서 대부분의 커밋이 그 커밋 위에 부모 커밋을 가리키고 있게 되는 것입니다. -- 곧 그림으로 된 화면에서 살펴보게 될 것입니다.",
             "",
-            "In order to clone a repository, you have to unpack or \"resolve\" all these deltas. That's why you might see the command line output:",
+            //"In order to clone a repository, you have to unpack or \"resolve\" all these deltas. That's why you might see the command line output:",
+            "저장소를 복제(clone)하려면, 그 모든 변경분(delta)를 풀어내야하는데, 그 때문에 명령행 결과로 아래와 같이 보게됩니다. ",
             "",
             "`resolving deltas`",
             "",
-            "when cloning a repo.",
-            "",
-            "It's a lot to take in, but for now you can think of commits as snapshots of the project. Commits are very light and switching between them is wicked fast!"
+            //"when cloning a repo.",
+            //"",
+            //"It's a lot to take in, but for now you can think of commits as snapshots of the project. Commits are very light and switching between them is wicked fast!"
+            "알아야할 것이 꽤 많습니다만, 일단은 커밋을 프로젝트의 각각의 스냅샷들로 생각하시는 걸로 충분합니다. 커밋은 매우 가볍고 커밋 사이의 전환도 매우 빠르다는 것을 기억해주세요!"
           ]
         }
       },
@@ -28604,12 +27569,15 @@ require.define("/src/levels/intro/1.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Let's see what this looks like in practice. On the right we have a visualization of a (small) git repository. There are two commits right now -- the first initial commit, `C0`, and one commit after that `C1` that might have some meaningful changes.",
+            // "Let's see what this looks like in practice. On the right we have a visualization of a (small) git repository. There are two commits right now -- the first initial commit, `C0`, and one commit after that `C1` that might have some meaningful changes.",
+            "연습할 때 어떻게 보이는지 확인해보죠. 오른쪽 화면에 git 저장소를 그림으로 표현해 놓았습니다. 현재 두번 커밋한 상태입니다 -- 첫번째 커밋으로 `C0`, 그 다음으로 `C1`이라는 어떤 의마있는 변화가 있는 커밋이 있습니다.",
             "",
-            "Hit the button below to make a new commit"
+            // "Hit the button below to make a new commit"
+            "아래 버튼을 눌러 새로운 커밋을 만들어보세요"
           ],
           "afterMarkdowns": [
-            "There we go! Awesome. We just made changes to the repository and saved them as a commit. The commit we just made has a parent, `C1`, which references which commit it was based off of."
+            // "There we go! Awesome. We just made changes to the repository and saved them as a commit. The commit we just made has a parent, `C1`, which references which commit it was based off of."
+            "이렇게 보입니다! 멋지죠. 우리는 방금 저장소 내용을 변경해서 한번의 커밋으로 저장했습니다. 방금 만든 커밋은 부모는 `C1`이고, 어떤 커밋을 기반으로 변경된 것인지를 가리킵니다."
           ],
           "command": "git commit",
           "beforeCommand": ""
@@ -28619,7 +27587,8 @@ require.define("/src/levels/intro/1.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "Go ahead and try it out on your own! After this window closes, make two commits to complete the level"
+            // "Go ahead and try it out on your own! After this window closes, make two commits to complete the level"
+            "계속해서 직접 한번 해보세요! 이 창을 닫고, 커밋을 두 번 하면 다음 레벨로 넘어갑니다"
           ]
         }
       }
@@ -28633,8 +27602,9 @@ require("/src/levels/intro/1.js");
 require.define("/src/levels/intro/2.js",function(require,module,exports,__dirname,__filename,process,global){exports.level = {
   "goalTreeString": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"},\"bugFix\":{\"target\":\"C1\",\"id\":\"bugFix\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"}},\"HEAD\":{\"target\":\"bugFix\",\"id\":\"HEAD\"}}",
   "solutionCommand": "git branch bugFix;git checkout bugFix",
-  "hint": "Make a new branch with \"git branch [name]\" and check it out with \"git checkout [name]\"",
-  "name": "Branching in Git",
+  // "hint": "Make a new branch with \"git branch [name]\" and check it out with \"git checkout [name]\"",
+  "hint": "\"git branch [브랜치명]\"으로 새 브랜치를 만들고, \"git checkout [브랜치명]\"로 그 브랜치로 이동하세요",
+  "name": "Git에서 브랜치 쓰기",
   "disabledMap" : {
     "git revert": true
   },
@@ -28644,17 +27614,22 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Git Branches",
+            // "## Git Branches",
+            "## Git 브랜치",
             "",
-            "Branches in Git are incredibly lightweight as well. They are simply references to a specific commit -- nothing more. This is why many Git enthusiasts chant the mantra:",
+            // "Branches in Git are incredibly lightweight as well. They are simply references to a specific commit -- nothing more. This is why many Git enthusiasts chant the mantra:",
+            "깃의 브랜치도 놀랍도록 가볍습니다. 브랜치는 특정 커밋에 대한 참조(reference)에 지나지 않습니다. 이런 사실 때문에 수많은 Git 애찬론자들이 자주 이렇게 말하곤 합니다:",
             "",
             "```",
-            "branch early, and branch often",
+            // "branch early, and branch often",
+            "브랜치를 서둘러서, 그리고 자주 만드세요",
             "```",
             "",
-            "Because there is no storage / memory overhead with making many branches, it's easier to logically divide up your work than have big beefy branches.",
+            // "Because there is no storage / memory overhead with making many branches, it's easier to logically divide up your work than have big beefy branches.",
+            "브랜치를 많이 만들어도 메모리나 디스크 공간에 부담이 되지 않기 때문에, 여러분의 작업을 커다른 브랜치로 만들기 보다, 작은 단위로 잘게 나누는 것이 좋습니다.",
             "",
-            "When we start mixing branches and commits, we will see how these two features combine. For now though, just remember that a branch essentially says \"I want to include the work of this commit and all parent commits.\""
+            // "When we start mixing branches and commits, we will see how these two features combine. For now though, just remember that a branch essentially says \"I want to include the work of this commit and all parent commits.\""
+            "브랜치와 커밋을 같이 쓸 때, 어떻게 두 기능이 조화를 이루는지 알아보겠습니다. 하지만 우선은, 단순히 브랜치를 \"하나의 커밋과 그 부모 커밋들을 포함하는 작업 내역\"이라고 기억하시면 됩니다."
           ]
         }
       },
@@ -28662,12 +27637,15 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Let's see what branches look like in practice.",
+            // "Let's see what branches look like in practice.",
+            "브랜치가 어떤 것인지 연습해보죠.",
             "",
-            "Here we will check out a new branch named `newImage`"
+            // "Here we will check out a new branch named `newImage`"
+            "`newImage`라는 브랜치를 살펴보겠습니다."
           ],
           "afterMarkdowns": [
-            "There, that's all there is to branching! The branch `newImage` now refers to commit `C1`"
+            // "There, that's all there is to branching! The branch `newImage` now refers to commit `C1`"
+            "저 그림에 브랜치의 모든 것이 담겨있습니다! 브랜치 `newImage`가 커밋 `C1`를 가리킵니다"
           ],
           "command": "git branch newImage",
           "beforeCommand": ""
@@ -28677,10 +27655,12 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Let's try to put some work on this new branch. Hit the button below"
+            // "Let's try to put some work on this new branch. Hit the button below"
+            "이 새로운 브랜치에 약간의 작업을 더해봅시다. 아래 버튼을 눌러주세요"
           ],
           "afterMarkdowns": [
-            "Oh no! The `master` branch moved but the `newImage` branch didn't! That's because we weren't \"on\" the new branch, which is why the asterisk (*) was on `master`"
+            // "Oh no! The `master` branch moved but the `newImage` branch didn't! That's because we weren't \"on\" the new branch, which is why the asterisk (*) was on `master`"
+            "앗! `master` 브랜치가 움직이고, `newImage` 브랜치는 이동하지 않았네요! 그건 우리가 새 브랜치 위에 있지 않았었기 때문입니다. 별표(*)가 `master`에 있었던 것이죠."
           ],
           "command": "git commit",
           "beforeCommand": "git branch newImage"
@@ -28690,16 +27670,25 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Let's tell git we want to checkout the branch with",
+            // "Let's tell git we want to checkout the branch with",
+            // "",
+            // "```",
+            // "git checkout [name]",
+            // "```",
+            // "",
+            // "This will put us on the new branch before committing our changes"
+            "아래의 명령으로 새 브랜치로 이동해 봅시다.",
             "",
             "```",
-            "git checkout [name]",
+            "git checkout [브랜치명]",
             "```",
             "",
-            "This will put us on the new branch before committing our changes"
+            "이렇게 하면 변경분을 커밋하기 전에 새 브랜치로 이동하게 됩니다."
+
           ],
           "afterMarkdowns": [
-            "There we go! Our changes were recorded on the new branch"
+            // "There we go! Our changes were recorded on the new branch"
+            "이거죠! 이제 우리의 변경이 새 브랜치에 기록되었습니다!"
           ],
           "command": "git checkout newImage; git commit",
           "beforeCommand": "git branch newImage"
@@ -28709,8 +27698,10 @@ require.define("/src/levels/intro/2.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "Ok! You are all ready to get branching. Once this window closes,",
-            "make a new branch named `bugFix` and switch to that branch"
+            // "Ok! You are all ready to get branching. Once this window closes,",
+            // "make a new branch named `bugFix` and switch to that branch"
+            "좋아요! 이제 직접 브랜치 작업을 연습해봅시다. 이 창을 닫고,",
+            "`bugFix`라는 새 브랜치를 만드시고, 그 브랜치로 이동해보세요"
           ]
         }
       }
@@ -28723,8 +27714,10 @@ require("/src/levels/intro/2.js");
 require.define("/src/levels/intro/3.js",function(require,module,exports,__dirname,__filename,process,global){exports.level = {
   "goalTreeString": "{\"branches\":{\"master\":{\"target\":\"C4\",\"id\":\"master\"},\"bugFix\":{\"target\":\"C2\",\"id\":\"bugFix\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C1\"],\"id\":\"C3\"},\"C4\":{\"parents\":[\"C2\",\"C3\"],\"id\":\"C4\"}},\"HEAD\":{\"target\":\"master\",\"id\":\"HEAD\"}}",
   "solutionCommand": "git checkout -b bugFix;git commit;git checkout master;git commit;git merge bugFix",
-  "name": "Merging in Git",
-  "hint": "Remember to commit in the order specified (bugFix before master)",
+  // "name": "Merging in Git",
+  "name": "Git에서 브랜치 합치기(Merge)",
+  // "hint": "Remember to commit in the order specified (bugFix before master)",
+  "hint": "말씀드린 순서대로 커밋해주세요 (bugFix에 먼저 커밋하고 master에 커밋)",
   "disabledMap" : {
     "git revert": true
   },
@@ -28734,13 +27727,21 @@ require.define("/src/levels/intro/3.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Branches and Merging",
+            // "## Branches and Merging",
+            // "",
+            // "Great! We now know how to commit and branch. Now we need to learn some kind of way of combining the work from two different branches together. This will allow us to branch off, develop a new feature, and then combine it back in.",
+            // "",
+            // "The first method to combine work that we will examine is `git merge`. Merging in Git creates a special commit that has two unique parents. A commit with two parents essentially means \"I want to include all the work from this parent over here and this one over here, *and* the set of all their parents.\"",
+            // "",
+            // "It's easier with visuals, let's check it out in the next view"
+            "## 브랜치와 합치기(Merge)",
             "",
-            "Great! We now know how to commit and branch. Now we need to learn some kind of way of combining the work from two different branches together. This will allow us to branch off, develop a new feature, and then combine it back in.",
+            "좋습니다! 지금까지 커밋하고 브랜치를 만드는 방법을 알아봤습니다. 이제 두 별도의 브랜치를 합치는 몇가지 방법을 알아볼 차례입니다. 이제부터 배우는 방법으로 브랜치를 따고, 새 기능을 개발 한 다음 합칠 수 있게 될 것입니다.",
             "",
-            "The first method to combine work that we will examine is `git merge`. Merging in Git creates a special commit that has two unique parents. A commit with two parents essentially means \"I want to include all the work from this parent over here and this one over here, *and* the set of all their parents.\"",
+            "처음으로 살펴볼 방법은 `git merge`입니다. Git의 합치기(merge)는 두 개의 부모(parent)를 가리키는 특별한 커밋을 만들어 냅니다. 두개의 부모가 있는 커밋이라는 것은 \"한 부모의 모든 작업내역과 나머지 부모의 모든 작업, *그리고* 그 두 부모의 모든 부모들의 작업내역을 포함한다\"라는 의미가 있습니다. ",
             "",
-            "It's easier with visuals, let's check it out in the next view"
+            "그림으로 보는게 이해하기 쉬워요. 다음 화면을 봅시다."
+
           ]
         }
       },
@@ -28748,16 +27749,22 @@ require.define("/src/levels/intro/3.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Here we have two branches; each has one commit that's unique. This means that neither branch includes the entire set of \"work\" in the repository that we have done. Let's fix that with merge.",
+            // "Here we have two branches; each has one commit that's unique. This means that neither branch includes the entire set of \"work\" in the repository that we have done. Let's fix that with merge.",
+            // "",
+            // "We will `merge` the branch `bugFix` into `master`"
+            "여기에 브랜치가 두 개 있습니다. 각 브랜치에 독립된 커밋이 하나씩 있구요. 그 말은 이 저장소에 지금까지 작업한 내역이 나뉘어 담겨 있다는 얘기입니다. 두 브랜치를 합쳐서(merge) 이 문제를 해결해 볼까요?",
             "",
-            "We will `merge` the branch `bugFix` into `master`"
+            "`bugFix` 브랜치를 `master` 브랜치에 합쳐(merge) 보겠습니다."
           ],
           "afterMarkdowns": [
-            "Woah! See that? First of all, `master` now points to a commit that has two parents. If you follow the arrows upstream from `master`, you will hit every commit along the way to the root. This means that `master` contains all the work in the repository now.",
+            // "Woah! See that? First of all, `master` now points to a commit that has two parents. If you follow the arrows upstream from `master`, you will hit every commit along the way to the root. This means that `master` contains all the work in the repository now.",
+            "보셨어요? 우선, `master`가 두 부모가 있는 커밋을 가리키고 있습니다. ",
             "",
-            "Also, see how the colors of the commits changed? To help with learning, I have included some color coordination. Each branch has a unique color. Each commit turns a color that is the blended combination of all the branches that contain that commit.",
+            // "Also, see how the colors of the commits changed? To help with learning, I have included some color coordination. Each branch has a unique color. Each commit turns a color that is the blended combination of all the branches that contain that commit.",
+            "또, 커밋들의 색이 바뀐 것을 눈치 채셨나요? 이해를 돕기위해 색상으로 구분해 표현했습니다. 각 브랜치는 그 브랜치만의 색상으로 그렸습니다. 브랜치가 합쳐지는 커밋의 경우에는, 그 브랜치들의 색을 조합한 색상으로 표시 했습니다.",
             "",
-            "So here we see that the `master` branch color is blended into all the commits, but the `bugFix` color is not. Let's fix that..."
+            // "So here we see that the `master` branch color is blended into all the commits, but the `bugFix` color is not. Let's fix that..."
+            "그런식으로 여기에 `bugFix`브랜치 쪽을 제외한 나머지 커밋만 `master` 브랜치의 색으로 칠해져 있습니다. 이걸 고쳐보죠..."
           ],
           "command": "git merge bugFix master",
           "beforeCommand": "git checkout -b bugFix; git commit; git checkout master; git commit"
@@ -28767,12 +27774,15 @@ require.define("/src/levels/intro/3.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Let's merge `master` into `bugFix`:"
+            // "Let's merge `master` into `bugFix`:"
+            "이제 `master` 브랜치에 `bugFix`를 합쳐(merge) 봅시다:"
           ],
           "afterMarkdowns": [
-            "Since `bugFix` was downstream of `master`, git didn't have to do any work; it simply just moved `bugFix` to the same commit `master` was attached to.",
+            // "Since `bugFix` was downstream of `master`, git didn't have to do any work; it simply just moved `bugFix` to the same commit `master` was attached to.",
+            "`bugFix`가 `master`의 부모쪽에 있었기 때문에, git이 별다른 일을 할 필요가 없었습니다; 간단히 `bugFix`를 `master`가 붙어 있는 커밋으로 이동시켰을 뿐입니다.",
             "",
-            "Now all the commits are the same color, which means each branch contains all the work in the repository! Woohoo"
+            // "Now all the commits are the same color, which means each branch contains all the work in the repository! Woohoo"
+            "짜잔! 이제 모든 커밋의 색이 같아졌고, 이는 두 브랜치가 모두 저장소의 모든 작업 내역을 포함하고 있다는 뜻입니다."
           ],
           "command": "git merge master bugFix",
           "beforeCommand": "git checkout -b bugFix; git commit; git checkout master; git commit; git merge bugFix master"
@@ -28782,16 +27792,27 @@ require.define("/src/levels/intro/3.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "To complete this level, do the following steps:",
+            // "To complete this level, do the following steps:",
+            // "",
+            // "* Make a new branch called `bugFix`",
+            // "* Checkout the `bugFix` branch with `git checkout bugFix`",
+            // "* Commit once",
+            // "* Go back to `master` with `git checkout`",
+            // "* Commit another time",
+            // "* Merge the branch `bugFix` into `master` with `git merge`",
+            // "",
+            // "*Remember, you can always re-display this dialog with \"help level\"!*"
+            "아래 작업을 해서 이 레벨을 통과하세요:",
             "",
-            "* Make a new branch called `bugFix`",
-            "* Checkout the `bugFix` branch with `git checkout bugFix`",
-            "* Commit once",
-            "* Go back to `master` with `git checkout`",
-            "* Commit another time",
-            "* Merge the branch `bugFix` into `master` with `git merge`",
+            "* `bugFix`라는 새 브랜치를 만듭니다",
+            "* `git checkout bugFix`를 입력해 `bugFix` 브랜치로 이동(checkout)합니다.",
+            "* 커밋 한 번 하세요",
+            "* `git checkout` 명령어를 이용해 `master`브랜치로 돌아갑니다",
+            "* 커밋 또 하세요",
+            "* `git merge` 명령어로 `bugFix`브랜치를 `master`에 합쳐 넣습니다.",
             "",
-            "*Remember, you can always re-display this dialog with \"help level\"!*"
+            "*아 그리고, \"help level\" 명령어로 이 안내창을 다시 볼 수 있다는 것을 기억해 두세요!*"
+
           ]
         }
       }
@@ -28805,8 +27826,10 @@ require("/src/levels/intro/3.js");
 require.define("/src/levels/intro/4.js",function(require,module,exports,__dirname,__filename,process,global){exports.level = {
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C3%22%2C%22id%22%3A%22master%22%7D%2C%22bugFix%22%3A%7B%22target%22%3A%22C2%27%22%2C%22id%22%3A%22bugFix%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C2%27%22%3A%7B%22parents%22%3A%5B%22C3%22%5D%2C%22id%22%3A%22C2%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22bugFix%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git checkout -b bugFix;git commit;git checkout master;git commit;git checkout bugFix;git rebase master",
-  "name": "Rebase Introduction",
-  "hint": "Make sure you commit from bugFix first",
+  // "name": "Rebase Introduction",
+  // "hint": "Make sure you commit from bugFix first",
+  "name": "리베이스(rebase)의 기본",
+  "hint": "bugFix 브랜치에서 먼저 커밋하세요",
   "disabledMap" : {
     "git revert": true
   },
@@ -28816,13 +27839,17 @@ require.define("/src/levels/intro/4.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Git Rebase",
+            // "## Git Rebase",
+            "## Git 리베이스(Rebase)",
             "",
-            "The second way of combining work between branches is *rebasing.* Rebasing essentially takes a set of commits, \"copies\" them, and plops them down somewhere else.",
+            // "The second way of combining work between branches is *rebasing.* Rebasing essentially takes a set of commits, \"copies\" them, and plops them down somewhere else.",
+            "브랜치끼리의 작업을 접목하는 두번째 방법은 *리베이스(rebase)*입니다. 리베이스는 기본적으로 커밋들을 모아서 복사한 뒤, 다른 곳에 떨궈 놓는 것입니다.",
             "",
-            "While this sounds confusing, the advantage of rebasing is that it can be used to make a nice linear sequence of commits. The commit log / history of the repository will be a lot cleaner if only rebasing is allowed.",
+            // "While this sounds confusing, the advantage of rebasing is that it can be used to make a nice linear sequence of commits. The commit log / history of the repository will be a lot cleaner if only rebasing is allowed.",
+            "조금 어려게 느껴질 수 있지만, 리베이스를 하면 커밋들의 흐름을 보기 좋게 한 줄로 만들 수 있다는 장점이 있습니다. 리베이스를 쓰면 저장소의 커밋 로그와 이력이 한결 깨끗해집니다.",
             "",
-            "Let's see it in action..."
+            // "Let's see it in action..."
+            "어떻게 동작하는지 살펴볼까요..."
           ]
         }
       },
@@ -28830,18 +27857,24 @@ require.define("/src/levels/intro/4.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Here we have two branches yet again; note that the bugFix branch is currently selected (note the asterisk)",
+            // "Here we have two branches yet again; note that the bugFix branch is currently selected (note the asterisk)",
+            "여기 또 브랜치 두 개가 있습니다; bugFix브랜치가 현재 선택됐다는 점 눈여겨 보세요 (별표 표시)",
             "",
-            "We would like to move our work from bugFix directly onto the work from master. That way it would look like these two features were developed sequentially, when in reality they were developed in parallel.",
+            // "We would like to move our work from bugFix directly onto the work from master. That way it would look like these two features were developed sequentially, when in reality they were developed in parallel.",
+            "bugFix 브랜치에서의 작업을 master 브랜치 위로 직접 옮겨 놓으려고 합니다. 그렇게 하면, 실제로는 두 기능을 따로따로 개발했지만, 마치 순서대로 개발한 것처럼 보이게 됩니다.",
             "",
-            "Let's do that with the `git rebase` command"
+            // "Let's do that with the `git rebase` command"
+            "`git rebase` 명령어로 함께 해보죠."
           ],
           "afterMarkdowns": [
-            "Awesome! Now the work from our bugFix branch is right on top of master and we have a nice linear sequence of commits.",
+            // "Awesome! Now the work from our bugFix branch is right on top of master and we have a nice linear sequence of commits.",
+            "오! 이제 bugFix 브랜치의 작업 내용이 master의 바로 위에 깔끔한 한 줄의 커밋으로 보이게 됐습니다.",
             "",
-            "Note that the commit C3 still exists somewhere (it has a faded appearance in the tree), and C3' is the \"copy\" that we rebased onto master.",
+            // "Note that the commit C3 still exists somewhere (it has a faded appearance in the tree), and C3' is the \"copy\" that we rebased onto master.",
+            "C3 커밋은 어딘가에 아직 남아있고(그림에서 흐려짐), C3'는 master 위에 올려 놓은 복사본입니다.",
             "",
-            "The only problem is that master hasn't been updated either, let's do that now..."
+            // "The only problem is that master hasn't been updated either, let's do that now..."
+            "master가 아직 그대로라는 문제가 남아있는데요, 바로 해결해보죠..."
           ],
           "command": "git rebase master",
           "beforeCommand": "git commit; git checkout -b bugFix C1; git commit"
@@ -28851,10 +27884,12 @@ require.define("/src/levels/intro/4.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Now we are checked out on the `master` branch. Let's do ahead and rebase onto `bugFix`..."
+            // "Now we are checked out on the `master` branch. Let's do ahead and rebase onto `bugFix`..."
+            "우리는 지금 `master` 브랜치를 선택한 상태입니다. `bugFix` 브랜치쪽으로 리베이스 해보겠습니다..."
           ],
           "afterMarkdowns": [
-            "There! Since `master` was downstream of `bugFix`, git simply moved the `master` branch reference forward in history."
+            // "There! Since `master` was downstream of `bugFix`, git simply moved the `master` branch reference forward in history."
+            "보세요! `master`가 `bugFix`의 부모쪽에 있었기 때문에, 단순히 그 브랜치를 더 앞쪽의 커밋을 가리키게 이동하는 것이 전부입니다."
           ],
           "command": "git rebase bugFix",
           "beforeCommand": "git commit; git checkout -b bugFix C1; git commit; git rebase master; git checkout master"
@@ -28864,14 +27899,20 @@ require.define("/src/levels/intro/4.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "To complete this level, do the following",
+            // "To complete this level, do the following",
+            "이하 작업을 하면 이번 레벨을 통과합니다",
             "",
-            "* Checkout a new branch named `bugFix`",
-            "* Commit once",
-            "* Go back to master and commit again",
-            "* Check out bugFix again and rebase onto master",
+            // "* Checkout a new branch named `bugFix`",
+            "* `bugFix`라는 새 브랜치를 만들어 선택하세요",
+            // "* Commit once",
+            "* 커밋 한 번 합니다",
+            // "* Go back to master and commit again",
+            "* master로 돌아가서 또 커밋합니다",
+            // "* Check out bugFix again and rebase onto master",
+            "* bugFix를 다시 선택하고 master에 리베이스 하세요",
             "",
-            "Good luck!"
+            // "Good luck!"
+            "화이팅!"
           ]
         }
       }
@@ -28886,7 +27927,8 @@ require.define("/src/levels/intro/5.js",function(require,module,exports,__dirnam
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C1%22%2C%22id%22%3A%22master%22%7D%2C%22pushed%22%3A%7B%22target%22%3A%22C2%27%22%2C%22id%22%3A%22pushed%22%7D%2C%22local%22%3A%7B%22target%22%3A%22C1%22%2C%22id%22%3A%22local%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C2%27%22%3A%7B%22parents%22%3A%5B%22C2%22%5D%2C%22id%22%3A%22C2%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22pushed%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git reset HEAD~1;git checkout pushed;git revert HEAD",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"},\"pushed\":{\"target\":\"C2\",\"id\":\"pushed\"},\"local\":{\"target\":\"C3\",\"id\":\"local\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C1\"],\"id\":\"C3\"}},\"HEAD\":{\"target\":\"local\",\"id\":\"HEAD\"}}",
-  "name": "Reversing Changes in Git",
+  // "name": "Reversing Changes in Git",
+  "name": "Git에서 작업 되돌리기",
   "hint": "",
   "startDialog": {
     "childViews": [
@@ -28894,11 +27936,14 @@ require.define("/src/levels/intro/5.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Reversing Changes in Git",
+            // "## Reversing Changes in Git",
+            "## Git에서 작업 되돌리기",
             "",
-            "There are many ways to reverse changes in Git. And just like committing, reversing changes in Git has both a low-level component (staging individual files or chunks) and a high-level component (how the changes are actually reversed). Our application will focus on the latter.",
+            // "There are many ways to reverse changes in Git. And just like committing, reversing changes in Git has both a low-level component (staging individual files or chunks) and a high-level component (how the changes are actually reversed). Our application will focus on the latter.",
+            "Git에는 작업한 것을 되돌리는 여러가지 방법이 있습니다. 변경내역을 되돌리는 것도 커밋과 마찬가지로 낮은 수준의 일(개별 파일이나 묶음을 스테이징 하는 것)과 높은 수준의 일(실제 변경이 복구되는 방법)이 있는데요, 여기서는 후자에 집중해 알려드릴게요.",
             "",
-            "There are two primary ways to undo changes in Git -- one is using `git reset` and the other is using `git revert`. We will look at each of these in the next dialog",
+            // "There are two primary ways to undo changes in Git -- one is using `git reset` and the other is using `git revert`. We will look at each of these in the next dialog",
+            "Git에서 변경한 내용을 되돌리는 방법은 크게 두가지가 있습니다 -- 하나는 `git reset`을 쓰는거고, 다른 하나는 `git revert`를 사용하는 것입니다. 다음 화면에서 하나씩 알아보겠습니다.",
             ""
           ]
         }
@@ -28907,14 +27952,18 @@ require.define("/src/levels/intro/5.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "## Git Reset",
+            // "## Git Reset",
+            "## Git 리셋(reset)",
             "",
-            "`git reset` reverts changes by moving a branch reference backwards in time to an older commit. In this sense you can think of it as \"rewriting history;\" `git reset` will move a branch backwards as if the commit had never been made in the first place.",
+            // "`git reset` reverts changes by moving a branch reference backwards in time to an older commit. In this sense you can think of it as \"rewriting history;\" `git reset` will move a branch backwards as if the commit had never been made in the first place.",
+            "`git reset`은 브랜치로 하여금 예전의 커밋을 가리키도록 이동시키는 방식으로 변경 내용을 되돌립니다. 이런 관점에서 \"히스토리를 고쳐쓴다\"라고 말할 수 있습니다. 즉, `git reset`은 마치 애초에 커밋하지 않은 것처럼 예전 커밋으로 브랜치를 옮기는 것입니다.",
             "",
-            "Let's see what that looks like:"
+            // "Let's see what that looks like:"
+            "어떤 그림인지 한번 보죠:"
           ],
           "afterMarkdowns": [
-            "Nice! Git simply moved the master branch reference back to `C1`; now our local repository is in a state as if `C2` had never happened"
+            // "Nice! Git simply moved the master branch reference back to `C1`; now our local repository is in a state as if `C2` had never happened"
+            "그림에서처럼 master 브랜치가 가리키던 커밋을 `C1`로 다시 옮겼습니다; 이러면 로컬 저장소에는 마치 `C2`커밋이 아예 없었던 것과 마찬가지 상태가 됩니다."
           ],
           "command": "git reset HEAD~1",
           "beforeCommand": "git commit"
@@ -28924,16 +27973,21 @@ require.define("/src/levels/intro/5.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "## Git Revert",
+            // "## Git Revert",
+            "## Git 리버트(revert)",
             "",
-            "While reseting works great for local branches on your own machine, it's method of \"rewriting history\" doesn't work for remote branches that others are using.",
+            // "While reseting works great for local branches on your own machine, it's method of \"rewriting history\" doesn't work for remote branches that others are using.",
+            "각자의 컴퓨터에서 작업하는 로컬 브랜치의 경우 리셋(reset)을 잘 쓸 수 있습니다만, \"히스토리를 고쳐쓴다\"는 점 때문에 다른 사람이 작업하는 리모트 브랜치에는 쓸 수 없습니다.",
             "",
-            "In order to reverse changes and *share* those reversed changes with others, we need to use `git revert`. Let's see it in action"
+            // "In order to reverse changes and *share* those reversed changes with others, we need to use `git revert`. Let's see it in action"
+            "변경분을 되돌리고, 이 되돌린 내용을 다른 사람들과 *공유하기* 위해서는, `git revert`를 써야합니다. 예제로 살펴볼게요."
           ],
           "afterMarkdowns": [
-            "Weird, a new commit plopped down below the commit we wanted to reverse. That's because this new commit `C2'` introduces *changes* -- it just happens to introduce changes that exactly reverses the commit of `C2`.",
+            // "Weird, a new commit plopped down below the commit we wanted to reverse. That's because this new commit `C2'` introduces *changes* -- it just happens to introduce changes that exactly reverses the commit of `C2`.",
+            "어색하게도, 우리가 되돌리려고한 커밋의 아래에 새로운 커밋이 생겼습니다. `C2`라는 새로운 커밋에 *변경내용*이 기록되는데요, 이 변경내역이 정확히 `C1` 커밋 내용의 반대되는 내용입니다.",
             "",
-            "With reverting, you can push out your changes to share with others."
+            // "With reverting, you can push out your changes to share with others."
+            "리버트를 하면 다른 사람들에게도 변경 내역을 밀어(push) 보낼 수 있습니다."
           ],
           "command": "git revert HEAD",
           "beforeCommand": "git commit"
@@ -28943,9 +27997,11 @@ require.define("/src/levels/intro/5.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "To complete this level, reverse the two most recent commits on both `local` and `pushed`.",
+            // "To complete this level, reverse the two most recent commits on both `local` and `pushed`.",
+            "이 레벨을 통과하려면, `local` 브랜치와 `pushed` 브랜치에 있는 최근 두 번의 커밋을 되돌려 보세요.",
             "",
-            "Keep in mind that `pushed` is a remote branch and `local` is a local branch -- that should help you chose your methods."
+            // "Keep in mind that `pushed` is a remote branch and `local` is a local branch -- that should help you chose your methods."
+            "`pushed`는 리모트 브랜치이고, `local`은 로컬 브랜치임을 신경쓰셔서 작업하세요 -- 어떤 방법을 선택하실지 떠오르시죠?"
           ]
         }
       }
@@ -29132,21 +28188,27 @@ require.define("/src/levels/rebase/1.js",function(require,module,exports,__dirna
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C7%27%22%2C%22id%22%3A%22master%22%7D%2C%22bugFix%22%3A%7B%22target%22%3A%22C3%27%22%2C%22id%22%3A%22bugFix%22%7D%2C%22side%22%3A%7B%22target%22%3A%22C6%27%22%2C%22id%22%3A%22side%22%7D%2C%22another%22%3A%7B%22target%22%3A%22C7%27%22%2C%22id%22%3A%22another%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C4%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C4%22%7D%2C%22C5%22%3A%7B%22parents%22%3A%5B%22C4%22%5D%2C%22id%22%3A%22C5%22%7D%2C%22C6%22%3A%7B%22parents%22%3A%5B%22C5%22%5D%2C%22id%22%3A%22C6%22%7D%2C%22C7%22%3A%7B%22parents%22%3A%5B%22C5%22%5D%2C%22id%22%3A%22C7%22%7D%2C%22C3%27%22%3A%7B%22parents%22%3A%5B%22C2%22%5D%2C%22id%22%3A%22C3%27%22%7D%2C%22C4%27%22%3A%7B%22parents%22%3A%5B%22C3%27%22%5D%2C%22id%22%3A%22C4%27%22%7D%2C%22C5%27%22%3A%7B%22parents%22%3A%5B%22C4%27%22%5D%2C%22id%22%3A%22C5%27%22%7D%2C%22C6%27%22%3A%7B%22parents%22%3A%5B%22C5%27%22%5D%2C%22id%22%3A%22C6%27%22%7D%2C%22C7%27%22%3A%7B%22parents%22%3A%5B%22C6%27%22%5D%2C%22id%22%3A%22C7%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22master%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git checkout bugFix;git rebase master;git checkout side;git rebase bugFix;git checkout another;git rebase side;git rebase another master",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C2\",\"id\":\"master\"},\"bugFix\":{\"target\":\"C3\",\"id\":\"bugFix\"},\"side\":{\"target\":\"C6\",\"id\":\"side\"},\"another\":{\"target\":\"C7\",\"id\":\"another\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C1\"],\"id\":\"C3\"},\"C4\":{\"parents\":[\"C0\"],\"id\":\"C4\"},\"C5\":{\"parents\":[\"C4\"],\"id\":\"C5\"},\"C6\":{\"parents\":[\"C5\"],\"id\":\"C6\"},\"C7\":{\"parents\":[\"C5\"],\"id\":\"C7\"}},\"HEAD\":{\"target\":\"master\",\"id\":\"HEAD\"}}",
-  "name": "Rebasing over 9000 times",
-  "hint": "Remember, the most efficient way might be to only update master at the end...",
+  // "name": "Rebasing over 9000 times",
+  "name": "9천번이 넘는 리베이스",
+  // "hint": "Remember, the most efficient way might be to only update master at the end...",
+  "hint": "아마도 master를 마지막에 업데이트하는 것이 가장 효율적인 방법일 것입니다...",
   "startDialog": {
     "childViews": [
       {
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "### Rebasing Multiple Branches",
+            // "### Rebasing Multiple Branches",
+            "### 여러 브랜치를 리베이스(rebase)하기 ",
             "",
-            "Man, we have a lot of branches going on here! Let's rebase all the work from these branches onto master.",
+            // "Man, we have a lot of branches going on here! Let's rebase all the work from these branches onto master.",
+            "음, 여기 꽤 여러개의 브랜치가 있습니다! 이 브랜치들의 모든 작업내역을 master에 리베이스 해볼까요?",
             "",
-            "Upper management is making this a bit trickier though -- they want the commits to all be in sequential order. So this means that our final tree should have `C7'` at the bottom, `C6'` above that, etc etc, etc all in order.",
+            // "Upper management is making this a bit trickier though -- they want the commits to all be in sequential order. So this means that our final tree should have `C7'` at the bottom, `C6'` above that, etc etc, etc all in order.",
+            "윗선에서 일을 복잡하게 만드네요 -- 그 분들이 이 모든 커밋들을 순서에 맞게 정렬하라고 합니다. 그럼 결국 우리의 최종 목표 트리는 제일 아래에 `C7'` 커밋, 그 위에 `C6'` 커밋, 또 그 위에 순서대로 보여합니다.",
             "",
-            "If you mess up along the way, feel free to use `reset` to start over again. Be sure to check out our solution and see if you can do it in fewer commands!"
+            // "If you mess up along the way, feel free to use `reset` to start over again. Be sure to check out our solution and see if you can do it in fewer commands!"
+            "만일 작업중에 내용이 꼬인다면, `reset`이라고 쳐서 처음부터 다시 시작할 수 있습니다. 모범 답안을 확인해 보시고, 혹시 더 적은 수의 커맨드로 해결할 수 있는지 알아보세요!",
           ]
         }
       }
@@ -29165,19 +28227,24 @@ require.define("/src/levels/rebase/2.js",function(require,module,exports,__dirna
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C5%22%2C%22id%22%3A%22master%22%7D%2C%22one%22%3A%7B%22target%22%3A%22C2%27%22%2C%22id%22%3A%22one%22%7D%2C%22two%22%3A%7B%22target%22%3A%22C2%27%27%22%2C%22id%22%3A%22two%22%7D%2C%22three%22%3A%7B%22target%22%3A%22C2%22%2C%22id%22%3A%22three%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C2%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C4%22%3A%7B%22parents%22%3A%5B%22C3%22%5D%2C%22id%22%3A%22C4%22%7D%2C%22C5%22%3A%7B%22parents%22%3A%5B%22C4%22%5D%2C%22id%22%3A%22C5%22%7D%2C%22C4%27%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C4%27%22%7D%2C%22C3%27%22%3A%7B%22parents%22%3A%5B%22C4%27%22%5D%2C%22id%22%3A%22C3%27%22%7D%2C%22C2%27%22%3A%7B%22parents%22%3A%5B%22C3%27%22%5D%2C%22id%22%3A%22C2%27%22%7D%2C%22C5%27%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C5%27%22%7D%2C%22C4%27%27%22%3A%7B%22parents%22%3A%5B%22C5%27%22%5D%2C%22id%22%3A%22C4%27%27%22%7D%2C%22C3%27%27%22%3A%7B%22parents%22%3A%5B%22C4%27%27%22%5D%2C%22id%22%3A%22C3%27%27%22%7D%2C%22C2%27%27%22%3A%7B%22parents%22%3A%5B%22C3%27%27%22%5D%2C%22id%22%3A%22C2%27%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22two%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git checkout one; git cherry-pick C4; git cherry-pick C3; git cherry-pick C2; git checkout two; git cherry-pick C5; git cherry-pick C4; git cherry-pick C3; git cherry-pick C2; git branch -f three C2",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C5\",\"id\":\"master\"},\"one\":{\"target\":\"C1\",\"id\":\"one\"},\"two\":{\"target\":\"C1\",\"id\":\"two\"},\"three\":{\"target\":\"C1\",\"id\":\"three\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C2\"],\"id\":\"C3\"},\"C4\":{\"parents\":[\"C3\"],\"id\":\"C4\"},\"C5\":{\"parents\":[\"C4\"],\"id\":\"C5\"}},\"HEAD\":{\"target\":\"master\",\"id\":\"HEAD\"}}",
-  "name": "Branch Spaghetti",
-  "hint": "There are multiple ways to solve this! Cherry-pick is the easy / long way, but rebase -i can be a shortcut",
+  // "name": "Branch Spaghetti",
+  "name": "브랜치 스파게티",
+  // "hint": "There are multiple ways to solve this! Cherry-pick is the easy / long way, but rebase -i can be a shortcut",
+  "hint": "이 문제를 해결하는 방법은 여러가지가 있습니다! 체리픽(cherry-pick)이 가장 쉽지만 오래걸리는 방법이고, 리베이스(rebase -i)가 빠른 방법입니다",
   "startDialog": {
     "childViews": [
       {
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Branch Spaghetti",
+            // "## Branch Spaghetti",
+            "## 브랜치 스파게티",
             "",
-            "WOAHHHhhh Nelly! We have quite the goal to reach in this level.",
+            // "WOAHHHhhh Nelly! We have quite the goal to reach in this level.",
+            "음, 이번에는 만만치 않습니다!",
             "",
-            "Here we have `master` that is a few commits ahead of branches `one` `two` and `three`. For whatever reason, we need to update these three other branches with modified versions of the last few commits on master.",
+            // "Here we have `master` that is a few commits ahead of branches `one` `two` and `three`. For whatever reason, we need to update these three other branches with modified versions of the last few commits on master.",
+            "여기 `master` 브랜치가 `one`, `two`, 그리고 `three`브랜치보다 몇번 앞의 커밋에 있습니다. 어떤 이유인지는 몰라도, master에 ",
             "",
             "Branch `one` needs a re-ordering and a deletion of `C5`. `two` needs pure reordering, and `three` only needs one commit!",
             "",
