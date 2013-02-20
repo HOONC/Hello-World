@@ -106,11 +106,11 @@ module.exports = function(grunt) {
     rm: {
       build: 'build/*'
     },
-    shell: {
-      gitAdd: {
-        command: 'git add build/'
-      }
-    },
+    // shell: {
+    //   gitAdd: {
+    //     command: {command: 'git add build/', options: ''}
+    //   }
+    // },
     jshint: {
       options: {
         curly: true,
@@ -170,8 +170,8 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-rm');
   grunt.loadNpmTasks('grunt-shell');
 
-  grunt.registerTask('build', 'rm browserify min hash buildIndex shell');
-  grunt.registerTask('fastBuild', 'rm browserify hash buildIndex shell');
+  grunt.registerTask('build', 'rm browserify min hash buildIndex');
+  grunt.registerTask('fastBuild', 'rm browserify hash buildIndex');
 
   grunt.registerTask('default', 'lint jasmine_node build compliment');
 
