@@ -15866,7 +15866,7 @@ exports.sequenceInfo = {
   mixed: {
     // displayName: 'A Mixed Bag',
     // about: 'A mixed bag of Git techniques, tricks, and tips'
-    displayName: '종합선물세트 (아직 영문)',
+    displayName: '종합선물세트',
     about: 'Git을 다루는 다양한 팁과 테크닉을 다양하게 알아봅니다'
   }
 };
@@ -16411,11 +16411,13 @@ require.define("/src/levels/rebase/2.js",function(require,module,exports,__dirna
             "음, 이번에는 만만치 않습니다!",
             "",
             // "Here we have `master` that is a few commits ahead of branches `one` `two` and `three`. For whatever reason, we need to update these three other branches with modified versions of the last few commits on master.",
-            "여기 `master` 브랜치가 `one`, `two`, 그리고 `three`브랜치보다 몇번 앞의 커밋에 있습니다. 어떤 이유인지는 몰라도, master에 ",
+            "여기 `master` 브랜치의 몇 번 이전 커밋에 `one`, `two`,`three` 총 3개의 브랜치가 있습니다. 어떤 이유인지는 몰라도, master의 최근 커밋 몇 개를 나머지 세 개의 브랜치에 반영하려고 합니다.",
             "",
-            "Branch `one` needs a re-ordering and a deletion of `C5`. `two` needs pure reordering, and `three` only needs one commit!",
+            // "Branch `one` needs a re-ordering and a deletion of `C5`. `two` needs pure reordering, and `three` only needs one commit!",
+            "`one` 브랜치는 순서를 바꾸고 `C5`커밋을 삭제하고, `two`브랜치는 순서만 바꾸며, `three`브랜치는 하나의 커밋만 가져옵시다!",
             "",
-            "We will let you figure out how to solve this one -- make sure to check out our solution afterwards with `show solution`. "
+            // "We will let you figure out how to solve this one -- make sure to check out our solution afterwards with `show solution`. "
+            "자유롭게 이 문제를 풀어보시고 나서 `show solution`명령어로 모범 답안을 확인해보세요."
           ]
         }
       }
@@ -16433,21 +16435,27 @@ require.define("/src/levels/mixed/1.js",function(require,module,exports,__dirnam
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C4%27%22%2C%22id%22%3A%22master%22%7D%2C%22debug%22%3A%7B%22target%22%3A%22C2%22%2C%22id%22%3A%22debug%22%7D%2C%22printf%22%3A%7B%22target%22%3A%22C3%22%2C%22id%22%3A%22printf%22%7D%2C%22bugFix%22%3A%7B%22target%22%3A%22C4%27%22%2C%22id%22%3A%22bugFix%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C2%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C4%22%3A%7B%22parents%22%3A%5B%22C3%22%5D%2C%22id%22%3A%22C4%22%7D%2C%22C4%27%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C4%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22master%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git checkout master;git cherry-pick C4",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"},\"debug\":{\"target\":\"C2\",\"id\":\"debug\"},\"printf\":{\"target\":\"C3\",\"id\":\"printf\"},\"bugFix\":{\"target\":\"C4\",\"id\":\"bugFix\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C2\"],\"id\":\"C3\"},\"C4\":{\"parents\":[\"C3\"],\"id\":\"C4\"}},\"HEAD\":{\"target\":\"bugFix\",\"id\":\"HEAD\"}}",
-  "name": "Grabbing Just 1 Commit",
-  "hint": "Remember, interactive rebase or cherry-pick is your friend here",
+  // "name": "Grabbing Just 1 Commit",
+  "name": "딱 한개의 커밋만 가져오기",
+  // "hint": "Remember, interactive rebase or cherry-pick is your friend here",
+  "hint": "대화식 리베이스(rebase -i)나 or 체리픽(cherry-pick)을 사용하세요",
   "startDialog": {
     "childViews": [
       {
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Locally stacked commits",
+            // "## Locally stacked commits",
+            "## 로컬에 쌓인 커밋들",
             "",
-            "Here's a development situation that often happens: I'm trying to track down a bug but it is quite elusive. In order to aid in my detective work, I put in a few debug commands and a few print statements.",
+            // "Here's a development situation that often happens: I'm trying to track down a bug but it is quite elusive. In order to aid in my detective work, I put in a few debug commands and a few print statements.",
+            "개발중에 종종 이런 상황이 생깁니다: 잘 띄지 않는 버그를 찾아서 해결하려고, 어떤 부분의 문제인지를 찾기 위해 디버그용 코드와 화면에 정보를 프린트하는 코드 몇 줄 넣습니다. ",
             "",
-            "All of these debugging / print statements are in their own branches. Finally I track down the bug, fix it, and rejoice!",
+            // "All of these debugging / print statements are in their own branches. Finally I track down the bug, fix it, and rejoice!",
+            "디버깅용 코드나 프린트 명령은 그 브랜치에 들어있습니다. 마침내 버그를 찾아서 고쳤고, 원래 작업하는 브랜치에 합치면 됩니다!",
             "",
-            "Only problem is that I now need to get my `bugFix` back into the `master` branch! I could simply fast-forward `master`, but then `master` would get all my debug statements."
+            // "Only problem is that I now need to get my `bugFix` back into the `master` branch! I could simply fast-forward `master`, but then `master` would get all my debug statements."
+            "이제 `bugFix`브랜치의 내용을 `master`에 합쳐 넣으려 하지만, 한 가지 문제가 있습니다. 그냥 간단히 `master`브랜치를 최신 커밋으로 이동시킨다면(fast-forward) 그 불필요한 디버그용 코드들도 함께 들어가 버린다는 문제죠."
           ]
         }
       },
@@ -16455,14 +16463,17 @@ require.define("/src/levels/mixed/1.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "This is where the magic of Git comes in. There are a few ways to do this, but the two most straightforward ways are:",
+            // "This is where the magic of Git comes in. There are a few ways to do this, but the two most straightforward ways are:",
+            "여기에서 Git의 마법이 드러납니다. 이 문제를 해결하는 여러가지 방법이 있습니다만, 가장 간단한 두가지 방법 아래와 같습니다:",
             "",
             "* `git rebase -i`",
             "* `git cherry-pick`",
             "",
-            "Interactive (the `-i`) rebasing allows you to chose which commits you want to keep or discard. It also allows you to reorder commits. This can be helpful if you want to toss out some work.",
+            // "Interactive (the `-i`) rebasing allows you to chose which commits you want to keep or discard. It also allows you to reorder commits. This can be helpful if you want to toss out some work.",
+            "대화형 (-i 옵션) 리베이스(rebase)로는 어떤 커밋을 취하거나 버릴지를 선택할 수 있습니다. 또 커밋의 순서를 바꿀 수도 있습니다. 이 커맨드로 어떤 작업의 일부만 골라내기에 유용합니다.",
             "",
-            "Cherry-picking allows you to pick individual commits and plop them down on top of `HEAD`"
+            // "Cherry-picking allows you to pick individual commits and plop them down on top of `HEAD`"
+            "체리픽(cherry-pick)은 개별 커밋을 골라서 `HEAD`위에 떨어뜨릴 수 있습니다."
           ]
         }
       },
@@ -16470,7 +16481,8 @@ require.define("/src/levels/mixed/1.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "This is a later level so we will leave it up to you to decide, but in order to complete the level, make sure `master` receives the commit that `bugFix` references."
+            // "This is a later level so we will leave it up to you to decide, but in order to complete the level, make sure `master` receives the commit that `bugFix` references."
+            "이번 레벨을 통과하기 위해 어떤 방법을 쓰시든 자유입니다만, `master`브랜치가 `bugFix` 브랜치의 커밋을 일부 가져오게 해주세요."
           ]
         }
       }
@@ -16489,19 +16501,24 @@ require.define("/src/levels/mixed/2.js",function(require,module,exports,__dirnam
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C3%27%27%22%2C%22id%22%3A%22master%22%7D%2C%22newImage%22%3A%7B%22target%22%3A%22C2%22%2C%22id%22%3A%22newImage%22%7D%2C%22caption%22%3A%7B%22target%22%3A%22C3%27%27%22%2C%22id%22%3A%22caption%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C2%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C3%27%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C3%27%22%7D%2C%22C2%27%22%3A%7B%22parents%22%3A%5B%22C3%27%22%5D%2C%22id%22%3A%22C2%27%22%7D%2C%22C2%27%27%22%3A%7B%22parents%22%3A%5B%22C3%27%22%5D%2C%22id%22%3A%22C2%27%27%22%7D%2C%22C2%27%27%27%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%27%27%27%22%7D%2C%22C3%27%27%22%3A%7B%22parents%22%3A%5B%22C2%27%27%27%22%5D%2C%22id%22%3A%22C3%27%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22master%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git rebase -i HEAD~2;git commit --amend;git rebase -i HEAD~2;git rebase caption master",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"},\"newImage\":{\"target\":\"C2\",\"id\":\"newImage\"},\"caption\":{\"target\":\"C3\",\"id\":\"caption\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C2\"],\"id\":\"C3\"}},\"HEAD\":{\"target\":\"caption\",\"id\":\"HEAD\"}}",
-  "name": "Juggling Commits",
-  "hint": "The first command is git rebase -i HEAD~2",
+  // "name": "Juggling Commits",
+  "name": "커밋들 갖고 놀기",
+  // "hint": "The first command is git rebase -i HEAD~2",
+  "hint": "첫번째 명령은 git rebase -i HEAD~2 입니다",
   "startDialog": {
     "childViews": [
       {
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Juggling Commits",
+            // "## Juggling Commits",
+            "## 커밋들 갖고 놀기",
             "",
-            "Here's another situation that happens quite commonly. You have some changes (`newImage`) and another set of changes (`caption`) that are related, so they are stacked on top of each other in your repository (aka one after another).",
+            // "Here's another situation that happens quite commonly. You have some changes (`newImage`) and another set of changes (`caption`) that are related, so they are stacked on top of each other in your repository (aka one after another).",
+            "이번에도 꽤 자주 발생하는 상황입니다. `newImage`와 `caption` 브랜치에 각각의 변경내역이 있고 서로 약간 관련이 있어서, 저장소에 차례로 쌓여있는 상황입니다.",
             "",
-            "The tricky thing is that sometimes you need to make a small modification to an earlier commit. In this case, design wants us to change the dimensions of `newImage` slightly, even though that commit is way back in our history!!"
+            // "The tricky thing is that sometimes you need to make a small modification to an earlier commit. In this case, design wants us to change the dimensions of `newImage` slightly, even though that commit is way back in our history!!"
+            "때로는 이전 커밋의 내용을 살짝 바꿔야하는 골치아픈 상황에 빠지게 됩니다. 이번에는 디자인 쪽에서 우리의 작업이력(history)에서는 이미 한참 전의 커밋 내용에 있는 `newImage`의 크기를 살짝 바꿔달라는 요청이 들어왔습니다."
           ]
         }
       },
@@ -16509,14 +16526,20 @@ require.define("/src/levels/mixed/2.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "We will overcome this difficulty by doing the following:",
+            // "We will overcome this difficulty by doing the following:",
+            "이 문제를 다음과 같이 풀어봅시다:",
             "",
-            "* We will re-order the commits so the one we want to change is on top with `git rebase -i`",
-            "* We will `commit --amend` to make the slight modification",
-            "* Then we will re-order the commits back to how they were previously with `git rebase -i`",
-            "* Finally, we will move master to this updated part of the tree to finish the level (via your method of choosing)",
+            // "* We will re-order the commits so the one we want to change is on top with `git rebase -i`",
+            "* `git rebase -i` 명령으로 우리가 바꿀 커밋을 가장 최근 순서로 바꾸어 놓습니다",
+            // "* We will `commit --amend` to make the slight modification",
+            "* `commit --amend` 명령으로 커밋 내용을 정정합니다",
+            // "* Then we will re-order the commits back to how they were previously with `git rebase -i`",
+            "* 다시 `git rebase -i` 명령으로 이 전의 커밋 순서대로 되돌려 놓습니다",
+            // "* Finally, we will move master to this updated part of the tree to finish the level (via your method of choosing)",
+            "* 마지막으로, master를 지금 트리가 변경된 부분으로 이동합니다. (편하신 방법으로 하세요)",
             "",
-            "There are many ways to accomplish this overall goal (I see you eye-ing cherry-pick), and we will see more of them later, but for now let's focus on this technique."
+            // "There are many ways to accomplish this overall goal (I see you eye-ing cherry-pick), and we will see more of them later, but for now let's focus on this technique."
+            "이 목표를 달성하기 위해서는 많은 방법이 있는데요(체리픽을 고민중이시죠?), 체리픽은 나중에 더 살펴보기로 하고, 우선은 위의 방법으로 해결해보세요."
           ]
         }
       },
@@ -16524,15 +16547,14 @@ require.define("/src/levels/mixed/2.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "Lastly, pay attention to the goal state here -- since we move the commits twice, they both get an apostrophe appended. One more apostrophe is added for the commit we amend, which gives us the final form of the tree "
+            // "Lastly, pay attention to the goal state here -- since we move the commits twice, they both get an apostrophe appended. One more apostrophe is added for the commit we amend, which gives us the final form of the tree "
+            "최종적으로, 목표 결과를 눈여겨 보세요 -- 우리가 커밋을 두 번 옮겼기 때문에, 두 커밋 모두 따옴표 표시가 붙어있습니다. 정정한(amend) 커밋은 따옴표가 추가로 하나 더 붙어있습니다."
           ]
         }
       }
     ]
   }
 };
-
-
 });
 
 require.define("/src/levels/mixed/3.js",function(require,module,exports,__dirname,__filename,process,global){exports.level = {
@@ -16543,21 +16565,27 @@ require.define("/src/levels/mixed/3.js",function(require,module,exports,__dirnam
   },
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"},\"newImage\":{\"target\":\"C2\",\"id\":\"newImage\"},\"caption\":{\"target\":\"C3\",\"id\":\"caption\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C2\"],\"id\":\"C3\"}},\"HEAD\":{\"target\":\"caption\",\"id\":\"HEAD\"}}",
   "compareOnlyMaster": true,
-  "name": "Juggling Commits #2",
-  "hint": "Don't forget to forward master to the updated changes!",
+  // "name": "Juggling Commits #2",
+  "name": "커밋 갖고 놀기 #2",
+  // "hint": "Don't forget to forward master to the updated changes!",
+  "hint": "master를 변경 완료한 커밋으로 이동(forward)시키는 것을 잊지 마세요!",
   "startDialog": {
     "childViews": [
       {
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Juggling Commits #2",
+            // "## Juggling Commits #2",
+            "## 커밋 갖고 놀기 #2",
             "",
-            "*If you haven't completed Juggling Commits #1 (the previous level), please do so before continuing*",
+            // "*If you haven't completed Juggling Commits #1 (the previous level), please do so before continuing*",
+            "*만약 이전 레벨의 커밋 갖고 놀기 #1을 풀지 않으셨다면, 계속하기에 앞서서 꼭 풀어보세요*",
             "",
-            "As you saw in the last level, we used `rebase -i` to reorder the commits. Once the commit we wanted to change was on top, we could easily --amend it and re-order back to our preferred order.",
+            // "As you saw in the last level, we used `rebase -i` to reorder the commits. Once the commit we wanted to change was on top, we could easily --amend it and re-order back to our preferred order.",
+            "이전 레벨에서 보셨듯이 `rebase -i` 명령으로 커밋의 순서를 바꿀 수 있습니다. 정정할 커밋이 바로 직전(top)에 있으면 간단히 --amend로 수정할 수 있고, 그리고 나서 다시 원하는 순서로 되돌려 놓으면 됩니다.",
             "",
-            "The only issue here is that there is a lot of reordering going on, which can introduce rebase conflicts. Let's look at another method with `git cherry-pick`"
+            // "The only issue here is that there is a lot of reordering going on, which can introduce rebase conflicts. Let's look at another method with `git cherry-pick`"
+            "이번에 한가지 문제는 순서를 꽤 많이 바꿔야한다는 점인데요, 그러다가 리베이스중에 충돌이 날 수 있습니다. 이번에는 다른 방법인 `git cherry-pick`으로 해결해 봅시다."
           ]
         }
       },
@@ -16565,12 +16593,15 @@ require.define("/src/levels/mixed/3.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Remember that git cherry-pick will plop down a commit from anywhere in the tree onto HEAD (as long as that commit isn't upstream).",
+            // "Remember that git cherry-pick will plop down a commit from anywhere in the tree onto HEAD (as long as that commit isn't upstream).",
+            "git cherry-pick으로 HEAD에다 어떤 커밋이든 떨어 뜨려 놓을 수 있다고 알려드린것 기억나세요? (단, 그 커밋이 현재 가리키고 있는 커밋이 아니어야합니다)",
             "",
-            "Here's a small refresher demo:"
+            // "Here's a small refresher demo:"
+            "간단한 데모로 다시 알려드리겠습니다:"
           ],
           "afterMarkdowns": [
-            "Nice! Let's move on"
+            // "Nice! Let's move on"
+            "좋아요! 계속할게요"
           ],
           "command": "git cherry-pick C2",
           "beforeCommand": "git checkout -b bugFix; git commit; git checkout master; git commit"
@@ -16580,7 +16611,8 @@ require.define("/src/levels/mixed/3.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "So in this level, let's accomplish the same objective of amending `C2` once but avoid using `rebase -i`. I'll leave it up to you to figure it out! :D"
+            // "So in this level, let's accomplish the same objective of amending `C2` once but avoid using `rebase -i`. I'll leave it up to you to figure it out! :D"
+            "그럼 이번 레벨에서는 아까와 마찬가지로 `C2` 커밋의 내용을 정정하되, `rebase -i`를 쓰지 말고 해보세요. ^.~"
           ]
         }
       }
@@ -27524,7 +27556,7 @@ exports.sequenceInfo = {
   mixed: {
     // displayName: 'A Mixed Bag',
     // about: 'A mixed bag of Git techniques, tricks, and tips'
-    displayName: '종합선물세트 (아직 영문)',
+    displayName: '종합선물세트',
     about: 'Git을 다루는 다양한 팁과 테크닉을 다양하게 알아봅니다'
   }
 };
@@ -28020,21 +28052,27 @@ require.define("/src/levels/mixed/1.js",function(require,module,exports,__dirnam
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C4%27%22%2C%22id%22%3A%22master%22%7D%2C%22debug%22%3A%7B%22target%22%3A%22C2%22%2C%22id%22%3A%22debug%22%7D%2C%22printf%22%3A%7B%22target%22%3A%22C3%22%2C%22id%22%3A%22printf%22%7D%2C%22bugFix%22%3A%7B%22target%22%3A%22C4%27%22%2C%22id%22%3A%22bugFix%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C2%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C4%22%3A%7B%22parents%22%3A%5B%22C3%22%5D%2C%22id%22%3A%22C4%22%7D%2C%22C4%27%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C4%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22master%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git checkout master;git cherry-pick C4",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"},\"debug\":{\"target\":\"C2\",\"id\":\"debug\"},\"printf\":{\"target\":\"C3\",\"id\":\"printf\"},\"bugFix\":{\"target\":\"C4\",\"id\":\"bugFix\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C2\"],\"id\":\"C3\"},\"C4\":{\"parents\":[\"C3\"],\"id\":\"C4\"}},\"HEAD\":{\"target\":\"bugFix\",\"id\":\"HEAD\"}}",
-  "name": "Grabbing Just 1 Commit",
-  "hint": "Remember, interactive rebase or cherry-pick is your friend here",
+  // "name": "Grabbing Just 1 Commit",
+  "name": "딱 한개의 커밋만 가져오기",
+  // "hint": "Remember, interactive rebase or cherry-pick is your friend here",
+  "hint": "대화식 리베이스(rebase -i)나 or 체리픽(cherry-pick)을 사용하세요",
   "startDialog": {
     "childViews": [
       {
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Locally stacked commits",
+            // "## Locally stacked commits",
+            "## 로컬에 쌓인 커밋들",
             "",
-            "Here's a development situation that often happens: I'm trying to track down a bug but it is quite elusive. In order to aid in my detective work, I put in a few debug commands and a few print statements.",
+            // "Here's a development situation that often happens: I'm trying to track down a bug but it is quite elusive. In order to aid in my detective work, I put in a few debug commands and a few print statements.",
+            "개발중에 종종 이런 상황이 생깁니다: 잘 띄지 않는 버그를 찾아서 해결하려고, 어떤 부분의 문제인지를 찾기 위해 디버그용 코드와 화면에 정보를 프린트하는 코드 몇 줄 넣습니다. ",
             "",
-            "All of these debugging / print statements are in their own branches. Finally I track down the bug, fix it, and rejoice!",
+            // "All of these debugging / print statements are in their own branches. Finally I track down the bug, fix it, and rejoice!",
+            "디버깅용 코드나 프린트 명령은 그 브랜치에 들어있습니다. 마침내 버그를 찾아서 고쳤고, 원래 작업하는 브랜치에 합치면 됩니다!",
             "",
-            "Only problem is that I now need to get my `bugFix` back into the `master` branch! I could simply fast-forward `master`, but then `master` would get all my debug statements."
+            // "Only problem is that I now need to get my `bugFix` back into the `master` branch! I could simply fast-forward `master`, but then `master` would get all my debug statements."
+            "이제 `bugFix`브랜치의 내용을 `master`에 합쳐 넣으려 하지만, 한 가지 문제가 있습니다. 그냥 간단히 `master`브랜치를 최신 커밋으로 이동시킨다면(fast-forward) 그 불필요한 디버그용 코드들도 함께 들어가 버린다는 문제죠."
           ]
         }
       },
@@ -28042,14 +28080,17 @@ require.define("/src/levels/mixed/1.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "This is where the magic of Git comes in. There are a few ways to do this, but the two most straightforward ways are:",
+            // "This is where the magic of Git comes in. There are a few ways to do this, but the two most straightforward ways are:",
+            "여기에서 Git의 마법이 드러납니다. 이 문제를 해결하는 여러가지 방법이 있습니다만, 가장 간단한 두가지 방법 아래와 같습니다:",
             "",
             "* `git rebase -i`",
             "* `git cherry-pick`",
             "",
-            "Interactive (the `-i`) rebasing allows you to chose which commits you want to keep or discard. It also allows you to reorder commits. This can be helpful if you want to toss out some work.",
+            // "Interactive (the `-i`) rebasing allows you to chose which commits you want to keep or discard. It also allows you to reorder commits. This can be helpful if you want to toss out some work.",
+            "대화형 (-i 옵션) 리베이스(rebase)로는 어떤 커밋을 취하거나 버릴지를 선택할 수 있습니다. 또 커밋의 순서를 바꿀 수도 있습니다. 이 커맨드로 어떤 작업의 일부만 골라내기에 유용합니다.",
             "",
-            "Cherry-picking allows you to pick individual commits and plop them down on top of `HEAD`"
+            // "Cherry-picking allows you to pick individual commits and plop them down on top of `HEAD`"
+            "체리픽(cherry-pick)은 개별 커밋을 골라서 `HEAD`위에 떨어뜨릴 수 있습니다."
           ]
         }
       },
@@ -28057,7 +28098,8 @@ require.define("/src/levels/mixed/1.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "This is a later level so we will leave it up to you to decide, but in order to complete the level, make sure `master` receives the commit that `bugFix` references."
+            // "This is a later level so we will leave it up to you to decide, but in order to complete the level, make sure `master` receives the commit that `bugFix` references."
+            "이번 레벨을 통과하기 위해 어떤 방법을 쓰시든 자유입니다만, `master`브랜치가 `bugFix` 브랜치의 커밋을 일부 가져오게 해주세요."
           ]
         }
       }
@@ -28077,19 +28119,24 @@ require.define("/src/levels/mixed/2.js",function(require,module,exports,__dirnam
   "goalTreeString": "%7B%22branches%22%3A%7B%22master%22%3A%7B%22target%22%3A%22C3%27%27%22%2C%22id%22%3A%22master%22%7D%2C%22newImage%22%3A%7B%22target%22%3A%22C2%22%2C%22id%22%3A%22newImage%22%7D%2C%22caption%22%3A%7B%22target%22%3A%22C3%27%27%22%2C%22id%22%3A%22caption%22%7D%7D%2C%22commits%22%3A%7B%22C0%22%3A%7B%22parents%22%3A%5B%5D%2C%22id%22%3A%22C0%22%2C%22rootCommit%22%3Atrue%7D%2C%22C1%22%3A%7B%22parents%22%3A%5B%22C0%22%5D%2C%22id%22%3A%22C1%22%7D%2C%22C2%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%22%7D%2C%22C3%22%3A%7B%22parents%22%3A%5B%22C2%22%5D%2C%22id%22%3A%22C3%22%7D%2C%22C3%27%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C3%27%22%7D%2C%22C2%27%22%3A%7B%22parents%22%3A%5B%22C3%27%22%5D%2C%22id%22%3A%22C2%27%22%7D%2C%22C2%27%27%22%3A%7B%22parents%22%3A%5B%22C3%27%22%5D%2C%22id%22%3A%22C2%27%27%22%7D%2C%22C2%27%27%27%22%3A%7B%22parents%22%3A%5B%22C1%22%5D%2C%22id%22%3A%22C2%27%27%27%22%7D%2C%22C3%27%27%22%3A%7B%22parents%22%3A%5B%22C2%27%27%27%22%5D%2C%22id%22%3A%22C3%27%27%22%7D%7D%2C%22HEAD%22%3A%7B%22target%22%3A%22master%22%2C%22id%22%3A%22HEAD%22%7D%7D",
   "solutionCommand": "git rebase -i HEAD~2;git commit --amend;git rebase -i HEAD~2;git rebase caption master",
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"},\"newImage\":{\"target\":\"C2\",\"id\":\"newImage\"},\"caption\":{\"target\":\"C3\",\"id\":\"caption\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C2\"],\"id\":\"C3\"}},\"HEAD\":{\"target\":\"caption\",\"id\":\"HEAD\"}}",
-  "name": "Juggling Commits",
-  "hint": "The first command is git rebase -i HEAD~2",
+  // "name": "Juggling Commits",
+  "name": "커밋들 갖고 놀기",
+  // "hint": "The first command is git rebase -i HEAD~2",
+  "hint": "첫번째 명령은 git rebase -i HEAD~2 입니다",
   "startDialog": {
     "childViews": [
       {
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Juggling Commits",
+            // "## Juggling Commits",
+            "## 커밋들 갖고 놀기",
             "",
-            "Here's another situation that happens quite commonly. You have some changes (`newImage`) and another set of changes (`caption`) that are related, so they are stacked on top of each other in your repository (aka one after another).",
+            // "Here's another situation that happens quite commonly. You have some changes (`newImage`) and another set of changes (`caption`) that are related, so they are stacked on top of each other in your repository (aka one after another).",
+            "이번에도 꽤 자주 발생하는 상황입니다. `newImage`와 `caption` 브랜치에 각각의 변경내역이 있고 서로 약간 관련이 있어서, 저장소에 차례로 쌓여있는 상황입니다.",
             "",
-            "The tricky thing is that sometimes you need to make a small modification to an earlier commit. In this case, design wants us to change the dimensions of `newImage` slightly, even though that commit is way back in our history!!"
+            // "The tricky thing is that sometimes you need to make a small modification to an earlier commit. In this case, design wants us to change the dimensions of `newImage` slightly, even though that commit is way back in our history!!"
+            "때로는 이전 커밋의 내용을 살짝 바꿔야하는 골치아픈 상황에 빠지게 됩니다. 이번에는 디자인 쪽에서 우리의 작업이력(history)에서는 이미 한참 전의 커밋 내용에 있는 `newImage`의 크기를 살짝 바꿔달라는 요청이 들어왔습니다."
           ]
         }
       },
@@ -28097,14 +28144,20 @@ require.define("/src/levels/mixed/2.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "We will overcome this difficulty by doing the following:",
+            // "We will overcome this difficulty by doing the following:",
+            "이 문제를 다음과 같이 풀어봅시다:",
             "",
-            "* We will re-order the commits so the one we want to change is on top with `git rebase -i`",
-            "* We will `commit --amend` to make the slight modification",
-            "* Then we will re-order the commits back to how they were previously with `git rebase -i`",
-            "* Finally, we will move master to this updated part of the tree to finish the level (via your method of choosing)",
+            // "* We will re-order the commits so the one we want to change is on top with `git rebase -i`",
+            "* `git rebase -i` 명령으로 우리가 바꿀 커밋을 가장 최근 순서로 바꾸어 놓습니다",
+            // "* We will `commit --amend` to make the slight modification",
+            "* `commit --amend` 명령으로 커밋 내용을 정정합니다",
+            // "* Then we will re-order the commits back to how they were previously with `git rebase -i`",
+            "* 다시 `git rebase -i` 명령으로 이 전의 커밋 순서대로 되돌려 놓습니다",
+            // "* Finally, we will move master to this updated part of the tree to finish the level (via your method of choosing)",
+            "* 마지막으로, master를 지금 트리가 변경된 부분으로 이동합니다. (편하신 방법으로 하세요)",
             "",
-            "There are many ways to accomplish this overall goal (I see you eye-ing cherry-pick), and we will see more of them later, but for now let's focus on this technique."
+            // "There are many ways to accomplish this overall goal (I see you eye-ing cherry-pick), and we will see more of them later, but for now let's focus on this technique."
+            "이 목표를 달성하기 위해서는 많은 방법이 있는데요(체리픽을 고민중이시죠?), 체리픽은 나중에 더 살펴보기로 하고, 우선은 위의 방법으로 해결해보세요."
           ]
         }
       },
@@ -28112,15 +28165,14 @@ require.define("/src/levels/mixed/2.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "Lastly, pay attention to the goal state here -- since we move the commits twice, they both get an apostrophe appended. One more apostrophe is added for the commit we amend, which gives us the final form of the tree "
+            // "Lastly, pay attention to the goal state here -- since we move the commits twice, they both get an apostrophe appended. One more apostrophe is added for the commit we amend, which gives us the final form of the tree "
+            "최종적으로, 목표 결과를 눈여겨 보세요 -- 우리가 커밋을 두 번 옮겼기 때문에, 두 커밋 모두 따옴표 표시가 붙어있습니다. 정정한(amend) 커밋은 따옴표가 추가로 하나 더 붙어있습니다."
           ]
         }
       }
     ]
   }
 };
-
-
 });
 require("/src/levels/mixed/2.js");
 
@@ -28132,21 +28184,27 @@ require.define("/src/levels/mixed/3.js",function(require,module,exports,__dirnam
   },
   "startTree": "{\"branches\":{\"master\":{\"target\":\"C1\",\"id\":\"master\"},\"newImage\":{\"target\":\"C2\",\"id\":\"newImage\"},\"caption\":{\"target\":\"C3\",\"id\":\"caption\"}},\"commits\":{\"C0\":{\"parents\":[],\"id\":\"C0\",\"rootCommit\":true},\"C1\":{\"parents\":[\"C0\"],\"id\":\"C1\"},\"C2\":{\"parents\":[\"C1\"],\"id\":\"C2\"},\"C3\":{\"parents\":[\"C2\"],\"id\":\"C3\"}},\"HEAD\":{\"target\":\"caption\",\"id\":\"HEAD\"}}",
   "compareOnlyMaster": true,
-  "name": "Juggling Commits #2",
-  "hint": "Don't forget to forward master to the updated changes!",
+  // "name": "Juggling Commits #2",
+  "name": "커밋 갖고 놀기 #2",
+  // "hint": "Don't forget to forward master to the updated changes!",
+  "hint": "master를 변경 완료한 커밋으로 이동(forward)시키는 것을 잊지 마세요!",
   "startDialog": {
     "childViews": [
       {
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "## Juggling Commits #2",
+            // "## Juggling Commits #2",
+            "## 커밋 갖고 놀기 #2",
             "",
-            "*If you haven't completed Juggling Commits #1 (the previous level), please do so before continuing*",
+            // "*If you haven't completed Juggling Commits #1 (the previous level), please do so before continuing*",
+            "*만약 이전 레벨의 커밋 갖고 놀기 #1을 풀지 않으셨다면, 계속하기에 앞서서 꼭 풀어보세요*",
             "",
-            "As you saw in the last level, we used `rebase -i` to reorder the commits. Once the commit we wanted to change was on top, we could easily --amend it and re-order back to our preferred order.",
+            // "As you saw in the last level, we used `rebase -i` to reorder the commits. Once the commit we wanted to change was on top, we could easily --amend it and re-order back to our preferred order.",
+            "이전 레벨에서 보셨듯이 `rebase -i` 명령으로 커밋의 순서를 바꿀 수 있습니다. 정정할 커밋이 바로 직전(top)에 있으면 간단히 --amend로 수정할 수 있고, 그리고 나서 다시 원하는 순서로 되돌려 놓으면 됩니다.",
             "",
-            "The only issue here is that there is a lot of reordering going on, which can introduce rebase conflicts. Let's look at another method with `git cherry-pick`"
+            // "The only issue here is that there is a lot of reordering going on, which can introduce rebase conflicts. Let's look at another method with `git cherry-pick`"
+            "이번에 한가지 문제는 순서를 꽤 많이 바꿔야한다는 점인데요, 그러다가 리베이스중에 충돌이 날 수 있습니다. 이번에는 다른 방법인 `git cherry-pick`으로 해결해 봅시다."
           ]
         }
       },
@@ -28154,12 +28212,15 @@ require.define("/src/levels/mixed/3.js",function(require,module,exports,__dirnam
         "type": "GitDemonstrationView",
         "options": {
           "beforeMarkdowns": [
-            "Remember that git cherry-pick will plop down a commit from anywhere in the tree onto HEAD (as long as that commit isn't upstream).",
+            // "Remember that git cherry-pick will plop down a commit from anywhere in the tree onto HEAD (as long as that commit isn't upstream).",
+            "git cherry-pick으로 HEAD에다 어떤 커밋이든 떨어 뜨려 놓을 수 있다고 알려드린것 기억나세요? (단, 그 커밋이 현재 가리키고 있는 커밋이 아니어야합니다)",
             "",
-            "Here's a small refresher demo:"
+            // "Here's a small refresher demo:"
+            "간단한 데모로 다시 알려드리겠습니다:"
           ],
           "afterMarkdowns": [
-            "Nice! Let's move on"
+            // "Nice! Let's move on"
+            "좋아요! 계속할게요"
           ],
           "command": "git cherry-pick C2",
           "beforeCommand": "git checkout -b bugFix; git commit; git checkout master; git commit"
@@ -28169,7 +28230,8 @@ require.define("/src/levels/mixed/3.js",function(require,module,exports,__dirnam
         "type": "ModalAlert",
         "options": {
           "markdowns": [
-            "So in this level, let's accomplish the same objective of amending `C2` once but avoid using `rebase -i`. I'll leave it up to you to figure it out! :D"
+            // "So in this level, let's accomplish the same objective of amending `C2` once but avoid using `rebase -i`. I'll leave it up to you to figure it out! :D"
+            "그럼 이번 레벨에서는 아까와 마찬가지로 `C2` 커밋의 내용을 정정하되, `rebase -i`를 쓰지 말고 해보세요. ^.~"
           ]
         }
       }
@@ -28244,11 +28306,13 @@ require.define("/src/levels/rebase/2.js",function(require,module,exports,__dirna
             "음, 이번에는 만만치 않습니다!",
             "",
             // "Here we have `master` that is a few commits ahead of branches `one` `two` and `three`. For whatever reason, we need to update these three other branches with modified versions of the last few commits on master.",
-            "여기 `master` 브랜치가 `one`, `two`, 그리고 `three`브랜치보다 몇번 앞의 커밋에 있습니다. 어떤 이유인지는 몰라도, master에 ",
+            "여기 `master` 브랜치의 몇 번 이전 커밋에 `one`, `two`,`three` 총 3개의 브랜치가 있습니다. 어떤 이유인지는 몰라도, master의 최근 커밋 몇 개를 나머지 세 개의 브랜치에 반영하려고 합니다.",
             "",
-            "Branch `one` needs a re-ordering and a deletion of `C5`. `two` needs pure reordering, and `three` only needs one commit!",
+            // "Branch `one` needs a re-ordering and a deletion of `C5`. `two` needs pure reordering, and `three` only needs one commit!",
+            "`one` 브랜치는 순서를 바꾸고 `C5`커밋을 삭제하고, `two`브랜치는 순서만 바꾸며, `three`브랜치는 하나의 커밋만 가져옵시다!",
             "",
-            "We will let you figure out how to solve this one -- make sure to check out our solution afterwards with `show solution`. "
+            // "We will let you figure out how to solve this one -- make sure to check out our solution afterwards with `show solution`. "
+            "자유롭게 이 문제를 풀어보시고 나서 `show solution`명령어로 모범 답안을 확인해보세요."
           ]
         }
       }

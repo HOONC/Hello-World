@@ -36,7 +36,7 @@ exports.sequenceInfo = {
   mixed: {
     // displayName: 'A Mixed Bag',
     // about: 'A mixed bag of Git techniques, tricks, and tips'
-    displayName: '종합선물세트 (아직 영문)',
+    displayName: '종합선물세트',
     about: 'Git을 다루는 다양한 팁과 테크닉을 다양하게 알아봅니다'
   }
 };
